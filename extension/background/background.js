@@ -132,7 +132,7 @@ class BackgroundService {
   handleInstall(details) {
     if (details.reason === 'install') {
       chrome.tabs.create({
-        url: 'http://localhost:3000/welcome'
+        url: 'http://localhost:3000/health'
       });
     }
   }
