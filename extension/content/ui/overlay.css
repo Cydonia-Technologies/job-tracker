@@ -1,0 +1,426 @@
+/* =====================================================
+   JOB TRACKER OVERLAY STYLING
+   ===================================================== */
+
+/* content/ui/overlay.css */
+
+/* Main overlay container */
+.job-tracker-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(2px);
+  z-index: 10000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 14px;
+  line-height: 1.4;
+}
+
+/* Main card */
+.job-tracker-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.2);
+  max-width: 480px;
+  width: 90%;
+  max-height: 90vh;
+  overflow: hidden;
+  position: relative;
+  animation: slideIn 0.3s ease;
+}
+
+@keyframes slideIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+/* Header */
+.job-tracker-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.job-tracker-logo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.job-tracker-logo svg {
+  width: 24px;
+  height: 24px;
+}
+
+.job-tracker-close {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 24px;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s ease;
+}
+
+.job-tracker-close:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+/* Content */
+.job-tracker-content {
+  padding: 24px 20px;
+}
+
+.job-info {
+  margin-bottom: 24px;
+}
+
+.job-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #1a202c;
+  margin: 0 0 8px 0;
+  line-height: 1.3;
+}
+
+.job-company {
+  font-size: 16px;
+  font-weight: 600;
+  color: #4a5568;
+  margin: 0 0 12px 0;
+}
+
+.job-location,
+.job-salary {
+  font-size: 14px;
+  color: #718096;
+  margin: 4px 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Actions */
+.job-tracker-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.job-tracker-btn {
+  padding: 12px 20px;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+  flex: 1;
+  justify-content: center;
+  min-height: 44px;
+}
+
+.job-tracker-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+.job-tracker-btn-primary {
+  background: linear-gradient(135deg, #4CAF50, #45a049);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.job-tracker-btn-primary:hover:not(:disabled) {
+  background: linear-gradient(135deg, #45a049, #3d8b40);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(76, 175, 80, 0.3);
+}
+
+.job-tracker-btn-secondary {
+  background: white;
+  color: #4a5568;
+  border: 2px solid #e2e8f0;
+}
+
+.job-tracker-btn-secondary:hover:not(:disabled) {
+  background: #f7fafc;
+  border-color: #cbd5e0;
+  transform: translateY(-1px);
+}
+
+.job-tracker-btn-success {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+  color: white;
+  border: 2px solid transparent;
+}
+
+.job-tracker-btn-error {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+  color: white;
+  border: 2px solid transparent;
+}
+
+/* Footer */
+.job-tracker-footer {
+  padding: 12px 20px;
+  background: #f7fafc;
+  border-top: 1px solid #e2e8f0;
+  text-align: center;
+}
+
+.job-tracker-footer small {
+  color: #a0aec0;
+  font-size: 12px;
+}
+
+/* Spinning animation for loading */
+.spinning {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* Toast notifications */
+.job-tracker-toast {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 20px;
+  border-radius: 8px;
+  color: white;
+  font-weight: 600;
+  z-index: 10001;
+  max-width: 400px;
+  animation: toastSlideIn 0.3s ease;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.2);
+}
+
+.job-tracker-toast-success {
+  background: linear-gradient(135deg, #48bb78, #38a169);
+}
+
+.job-tracker-toast-error {
+  background: linear-gradient(135deg, #f56565, #e53e3e);
+}
+
+@keyframes toastSlideIn {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Login prompt overlay */
+.job-tracker-login-prompt {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  max-width: 320px;
+  animation: slideInRight 0.3s ease;
+}
+
+.login-content {
+  padding: 20px;
+  text-align: center;
+}
+
+.login-content h3 {
+  margin: 0 0 8px 0;
+  color: #1a202c;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.login-content p {
+  margin: 0 0 16px 0;
+  color: #4a5568;
+  font-size: 14px;
+}
+
+.login-content button {
+  margin: 4px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 6px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#login-btn {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  color: white;
+}
+
+#login-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+#dismiss-btn {
+  background: #f7fafc;
+  color: #4a5568;
+  border: 1px solid #e2e8f0;
+}
+
+#dismiss-btn:hover {
+  background: #edf2f7;
+}
+
+@keyframes slideInRight {
+  from {
+    opacity: 0;
+    transform: translateX(100%);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+/* Responsive design */
+@media (max-width: 480px) {
+  .job-tracker-card {
+    width: 95%;
+    margin: 10px;
+  }
+
+  .job-tracker-actions {
+    flex-direction: column;
+  }
+
+  .job-tracker-btn {
+    flex: none;
+  }
+
+  .job-title {
+    font-size: 18px;
+  }
+
+  .job-tracker-toast {
+    top: 10px;
+    right: 10px;
+    left: 10px;
+    max-width: none;
+  }
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .job-tracker-card {
+    background: #2d3748;
+    color: #e2e8f0;
+  }
+
+  .job-title {
+    color: #f7fafc;
+  }
+
+  .job-company {
+    color: #cbd5e0;
+  }
+
+  .job-location,
+  .job-salary {
+    color: #a0aec0;
+  }
+
+  .job-tracker-btn-secondary {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+  }
+
+  .job-tracker-btn-secondary:hover:not(:disabled) {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+
+  .job-tracker-footer {
+    background: #1a202c;
+    border-color: #4a5568;
+  }
+
+  .job-tracker-login-prompt .login-content {
+    background: #2d3748;
+    color: #e2e8f0;
+  }
+
+  .job-tracker-login-prompt .login-content h3 {
+    color: #f7fafc;
+  }
+
+  .job-tracker-login-prompt .login-content p {
+    color: #cbd5e0;
+  }
+
+  #dismiss-btn {
+    background: #4a5568;
+    color: #e2e8f0;
+    border-color: #718096;
+  }
+}
+
+/* Accessibility improvements */
+.job-tracker-btn:focus,
+.job-tracker-close:focus {
+  outline: 2px solid #4299e1;
+  outline-offset: 2px;
+}
+
+/* High contrast mode */
+@media (prefers-contrast: high) {
+  .job-tracker-overlay {
+    background: rgba(0, 0, 0, 0.8);
+  }
+
+  .job-tracker-card {
+    border: 2px solid #000;
+  }
+
+  .job-tracker-btn {
+    border-width: 2px;
+  }
+}
