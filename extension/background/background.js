@@ -1,5 +1,5 @@
 // =====================================================
-// 2. BACKGROUND SCRIPT - API Communication
+//  BACKGROUND SCRIPT - API Communication
 // =====================================================
 
 class BackgroundService {
@@ -51,29 +51,58 @@ class BackgroundService {
     }
   }
 
+  // Temporary solution that bypasses auth for testing purposes
+  // TODO: remove later
   async saveJob(jobData) {
     const token = await this.getAuthToken();
     
-    if (!token) {
-      throw new Error('Not authenticated. Please log in to the web app first.');
+    // FOR TESTING: Use a dummy token or skip auth
+    const headers = {
+      'Content-Type': 'application/json'
+    };
+    
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
     }
-
+  
     const response = await fetch(`${this.API_BASE_URL}/jobs`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: headers,
       body: JSON.stringify(jobData)
     });
-
+  
     if (!response.ok) {
       const error = await response.json();
+      // For testing, log the exact error
+      console.error('Save job error:', error);
       throw new Error(error.error || 'Failed to save job');
     }
-
+  
     return await response.json();
   }
+  // async saveJob(jobData) {
+  //   const token = await this.getAuthToken();
+  //   
+  //   if (!token) {
+  //     throw new Error('Not authenticated. Please log in to the web app first.');
+  //   }
+
+  //   const response = await fetch(`${this.API_BASE_URL}/jobs`, {
+  //     method: 'POST',
+  //     headers: {
+  //       'Content-Type': 'application/json',
+  //       'Authorization': `Bearer ${token}`
+  //     },
+  //     body: JSON.stringify(jobData)
+  //   });
+
+  //   if (!response.ok) {
+  //     const error = await response.json();
+  //     throw new Error(error.error || 'Failed to save job');
+  //   }
+
+  //   return await response.json();
+  // }
 
   async getUserProfile() {
     const token = await this.getAuthToken();

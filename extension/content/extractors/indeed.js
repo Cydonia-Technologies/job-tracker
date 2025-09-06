@@ -9,28 +9,26 @@ class IndeedExtractor {
     this.selectors = {
       // Job title selectors (multiple fallbacks)
       title: [
-        '[data-jk] h1 span[title]',
+        'h1[data-testid="jobsearch-JobInfoHeader-title"] span',
+        'h1 span[title]',
+        '[data-testid="jobsearch-JobInfoHeader-title"]',
         '.jobsearch-JobInfoHeader-title span',
-        'h1[data-testid="job-title"]',
-        '.jobsearch-SerpJobCard h2 a span',
-        'h1 span[title]'
+        'h1'
       ],
       
-      // Company name selectors
       company: [
-        '[data-testid="inlineHeader-companyName"] a',
         '[data-testid="inlineHeader-companyName"]',
+        'a[data-testid="inlineHeader-companyName"]', 
+        '.css-1h7lukg', // Indeed sometimes uses generated CSS classes
         '.jobsearch-InlineCompanyRating a',
-        '.jobsearch-SerpJobCard .companyName',
-        'span[data-testid="company-name"]'
+        'span:contains("Company")'
       ],
       
-      // Location selectors
       location: [
         '[data-testid="job-location"]',
-        '.jobsearch-InlineCompanyRating + div',
-        '.jobsearch-SerpJobCard .companyLocation',
-        'div[data-testid="job-location"]'
+        '[data-testid="inlineHeader-companyLocation"]',
+        '.css-1p0sjhy', // Location container
+        '.companyLocation'
       ],
       
       // Salary selectors
@@ -67,6 +65,10 @@ class IndeedExtractor {
   }
 
   async extract() {
+    console.log('IndeedExtractor: Starting extraction');
+    console.log('Current URL:', window.location.href);
+    console.log('Page HTML preview:', document.body.innerHTML.substring(0, 500));
+  
     // Wait for page to load completely
     await this.waitForContent();
     
@@ -78,7 +80,7 @@ class IndeedExtractor {
     } else if (pageType === 'search-results') {
       return this.extractFromSearchResults();
     }
-    
+    console.log('Unknown page type, returning null');
     return null;
   }
 
@@ -114,6 +116,18 @@ class IndeedExtractor {
   }
 
   extractJobView() {
+    console.log('Extracting from job view page');
+
+    // Test each selector
+    const title = this.extractText(this.selectors.title);
+    console.log('Found title:', title);
+  
+    const company = this.extractText(this.selectors.company);
+    console.log('Found company:', company);
+  
+    const location = this.extractText(this.selectors.location);
+    console.log('Found location:', location);
+
     const jobData = {
       title: this.extractText(this.selectors.title),
       company: this.extractText(this.selectors.company),

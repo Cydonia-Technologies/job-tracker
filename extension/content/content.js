@@ -53,12 +53,16 @@ class JobTrackerContent {
 
   async setup() {
     // Check if user is authenticated
-    const authStatus = await this.sendMessage({ action: 'CHECK_AUTH' });
-    
-    if (!authStatus.success || !authStatus.data.authenticated) {
-      this.showLoginPrompt();
-      return;
-    }
+    //    const authStatus = await this.sendMessage({ action: 'CHECK_AUTH' });
+    //    
+    //    if (!authStatus.success || !authStatus.data.authenticated) {
+    //      this.showLoginPrompt();
+    //      return;
+    //    }
+
+
+    // TEMPORARILY SKIP AUTH - just proceed directly
+    console.log('Skipping auth check for testing');
 
     // Try to extract job data
     const jobData = await this.extractJobData();
