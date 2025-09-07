@@ -1,9 +1,9 @@
 // =====================================================
-// JOBS ROUTES (routes/jobs.js)
+// JOBS ROUTES (routes/jobs.js) - Admin Client Version
 // =====================================================
 
 const express = require('express');
-const { supabase } = require('../config/database');
+const { supabaseAdmin } = require('../config/database'); // Use admin client
 const { authenticateUser } = require('../middleware/auth');
 const { validate } = require('../middleware/validation');
 const router = express.Router();
@@ -28,10 +28,10 @@ router.get('/', async (req, res) => {
 
     const offset = (page - 1) * limit;
 
-    let query = supabase
+    let query = supabaseAdmin
       .from('jobs_with_status') // Use the view we created
-      .select('*')
-      .eq('user_id', req.userId);
+      .select('*', { count: 'exact' })
+      .eq('user_id', req.userId); // Manual user filtering
 
     // Apply filters
     if (status) {
@@ -58,19 +58,21 @@ router.get('/', async (req, res) => {
     const { data: jobs, error, count } = await query;
 
     if (error) {
+      console.error('Failed to fetch jobs:', error);
       return res.status(400).json({ error: error.message });
     }
 
     res.json({
-      jobs,
+      jobs: jobs || [],
       pagination: {
         page: parseInt(page),
         limit: parseInt(limit),
-        total: count,
-        pages: Math.ceil(count / limit)
+        total: count || 0,
+        pages: Math.ceil((count || 0) / limit)
       }
     });
   } catch (error) {
+    console.error('Jobs fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch jobs' });
   }
 });
@@ -78,19 +80,21 @@ router.get('/', async (req, res) => {
 // GET /api/jobs/:id - Get specific job
 router.get('/:id', async (req, res) => {
   try {
-    const { data: job, error } = await supabase
+    const { data: job, error } = await supabaseAdmin
       .from('jobs_with_status')
       .select('*')
       .eq('id', req.params.id)
-      .eq('user_id', req.userId)
+      .eq('user_id', req.userId) // Manual user filtering
       .single();
 
     if (error) {
+      console.error('Job fetch error:', error);
       return res.status(404).json({ error: 'Job not found' });
     }
 
     res.json(job);
   } catch (error) {
+    console.error('Job fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch job' });
   }
 });
@@ -100,21 +104,31 @@ router.post('/', validate('job'), async (req, res) => {
   try {
     const jobData = {
       ...req.body,
-      user_id: req.userId
+      user_id: req.userId // Set from auth middleware
     };
 
-    const { data: job, error } = await supabase
+    console.log('Creating job for user:', req.userId);
+    console.log('Job data:', jobData);
+
+    // Use admin client to bypass RLS
+    const { data: job, error } = await supabaseAdmin
       .from('jobs')
       .insert(jobData)
       .select()
       .single();
 
     if (error) {
-      return res.status(400).json({ error: error.message });
+      console.error('Job creation error:', error);
+      return res.status(400).json({ 
+        error: error.message,
+        details: error.details || 'Unknown database error'
+      });
     }
 
+    console.log('Job created successfully:', job.id);
     res.status(201).json(job);
   } catch (error) {
+    console.error('Failed to create job:', error);
     res.status(500).json({ error: 'Failed to create job' });
   }
 });
@@ -122,20 +136,31 @@ router.post('/', validate('job'), async (req, res) => {
 // PUT /api/jobs/:id - Update job
 router.put('/:id', validate('job'), async (req, res) => {
   try {
-    const { data: job, error } = await supabase
+    const updateData = {
+      ...req.body,
+      updated_at: new Date().toISOString()
+    };
+
+    const { data: job, error } = await supabaseAdmin
       .from('jobs')
-      .update(req.body)
+      .update(updateData)
       .eq('id', req.params.id)
-      .eq('user_id', req.userId)
+      .eq('user_id', req.userId) // Manual user filtering
       .select()
       .single();
 
     if (error) {
+      console.error('Job update error:', error);
       return res.status(400).json({ error: error.message });
+    }
+
+    if (!job) {
+      return res.status(404).json({ error: 'Job not found or access denied' });
     }
 
     res.json(job);
   } catch (error) {
+    console.error('Job update error:', error);
     res.status(500).json({ error: 'Failed to update job' });
   }
 });
@@ -143,18 +168,20 @@ router.put('/:id', validate('job'), async (req, res) => {
 // DELETE /api/jobs/:id - Delete job
 router.delete('/:id', async (req, res) => {
   try {
-    const { error } = await supabase
+    const { error } = await supabaseAdmin
       .from('jobs')
       .delete()
       .eq('id', req.params.id)
-      .eq('user_id', req.userId);
+      .eq('user_id', req.userId); // Manual user filtering
 
     if (error) {
+      console.error('Job deletion error:', error);
       return res.status(400).json({ error: error.message });
     }
 
     res.status(204).send();
   } catch (error) {
+    console.error('Job deletion error:', error);
     res.status(500).json({ error: 'Failed to delete job' });
   }
 });
@@ -173,12 +200,13 @@ router.post('/bulk', async (req, res) => {
       user_id: req.userId
     }));
 
-    const { data: createdJobs, error } = await supabase
+    const { data: createdJobs, error } = await supabaseAdmin
       .from('jobs')
       .insert(jobsWithUserId)
       .select();
 
     if (error) {
+      console.error('Bulk job creation error:', error);
       return res.status(400).json({ error: error.message });
     }
 
@@ -187,6 +215,7 @@ router.post('/bulk', async (req, res) => {
       jobs: createdJobs
     });
   } catch (error) {
+    console.error('Bulk job creation error:', error);
     res.status(500).json({ error: 'Failed to create jobs' });
   }
 });
@@ -194,23 +223,31 @@ router.post('/bulk', async (req, res) => {
 // GET /api/jobs/stats/summary - Get user's job statistics
 router.get('/stats/summary', async (req, res) => {
   try {
-    const { data: stats, error } = await supabase
+    // Get application stats
+    const { data: stats, error: statsError } = await supabaseAdmin
       .from('user_application_stats')
       .select('*')
       .eq('user_id', req.userId)
       .single();
 
-    if (error && error.code !== 'PGRST116') { // Not found is OK
-      return res.status(400).json({ error: error.message });
-    }
-
-    const { data: jobCount } = await supabase
+    // Get job count
+    const { data: jobData, error: jobError, count: jobCount } = await supabaseAdmin
       .from('jobs')
       .select('id', { count: 'exact' })
       .eq('user_id', req.userId);
 
+    if (statsError && statsError.code !== 'PGRST116') { // PGRST116 = not found, which is OK
+      console.error('Stats fetch error:', statsError);
+      return res.status(400).json({ error: statsError.message });
+    }
+
+    if (jobError) {
+      console.error('Job count error:', jobError);
+      return res.status(400).json({ error: jobError.message });
+    }
+
     res.json({
-      total_jobs: jobCount?.length || 0,
+      total_jobs: jobCount || 0,
       ...stats || {
         total_applications: 0,
         applied_count: 0,
@@ -221,6 +258,7 @@ router.get('/stats/summary', async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Stats fetch error:', error);
     res.status(500).json({ error: 'Failed to fetch statistics' });
   }
 });

@@ -21,7 +21,11 @@ const schemas = {
     source: Joi.string().valid('indeed', 'linkedin', 'glassdoor', 'company_website', 'nittany_careers', 'other').optional(),
     is_remote: Joi.boolean().optional(),
     tags: Joi.array().items(Joi.string().max(50)).optional(),
-    notes: Joi.string().optional()
+    notes: Joi.string().optional(),
+    // ADD THESE LINES:
+    extracted_data: Joi.object().optional(), // Allow the extracted_data object
+    salary_raw: Joi.string().optional(),     // Allow raw salary text
+    salary_currency: Joi.string().optional() // Allow currency
   }),
 
   application: Joi.object({
