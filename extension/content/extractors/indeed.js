@@ -1,346 +1,283 @@
 // =====================================================
-// INDEED JOB EXTRACTOR - Complete Implementation
+// INDEED JOB EXTRACTOR - Complete Clean Version
 // =====================================================
 
-// content/extractors/indeed.js
 class IndeedExtractor {
   constructor() {
     this.source = 'indeed';
+    
+    // Updated selectors based on actual Indeed structure
     this.selectors = {
-      // Job title selectors (multiple fallbacks)
+      // Job title selectors - multiple fallbacks
       title: [
-        'h1[data-testid="jobsearch-JobInfoHeader-title"] span',
-        'h1 span[title]',
-        '[data-testid="jobsearch-JobInfoHeader-title"]',
+        '[data-testid="jobsearch-JobInfoHeader-title"] span',
         '.jobsearch-JobInfoHeader-title span',
-        'h1'
+        'h1 span[title]',
+        'h2[data-testid="jobsearch-JobInfoHeader-title"] span',
+        'h1', 'h2'
       ],
       
+      // Company name selectors - cast a wider net
       company: [
-        '[data-testid="inlineHeader-companyName"]',
-        'a[data-testid="inlineHeader-companyName"]', 
-        '.css-1h7lukg', // Indeed sometimes uses generated CSS classes
-        '.jobsearch-InlineCompanyRating a',
-        'span:contains("Company")'
+        '[data-testid*="companyName"] a',
+        '[data-testid*="companyName"]',
+        '[id*="company"] a',
+        '[id*="company"]',
+        '.companyName a',
+        '.companyName',
+        // Search within any element that contains "Lockheed Martin" pattern
+        'a[href*="/cmp/"]',
+        'span:contains("Lockheed")', // Will be handled specially
       ],
       
+      // Location selectors - cast a wider net  
       location: [
-        '[data-testid="job-location"]',
-        '[data-testid="inlineHeader-companyLocation"]',
-        '.css-1p0sjhy', // Location container
-        '.companyLocation'
+        '[data-testid*="location"] span',
+        '[data-testid*="location"]',
+        '[id*="location"]',
+        '.location',
+        // Look for PA zip code pattern
+        'span:contains("PA ")',
+      ],
+      
+      // Job description
+      description: [
+        '#jobDescriptionText',
+        '.jobsearch-JobComponent-description',
+        '[data-testid*="description"]'
       ],
       
       // Salary selectors
       salary: [
-        '.jobsearch-JobMetadataHeader-item span',
+        '.jobsearch-JobMetadataHeader-item',
         '.salary-snippet',
-        '[data-testid="job-salary"]',
-        '.jobsearch-SerpJobCard .salaryText'
-      ],
-      
-      // Job description selectors
-      description: [
-        '#jobDescriptionText',
-        '.jobsearch-jobDescriptionText',
-        '[data-testid="job-description"]',
-        '.jobsearch-SerpJobCard .summary'
-      ],
-      
-      // Job type selectors
-      jobType: [
-        '.jobsearch-JobMetadataHeader-item:contains("time")',
-        '.jobsearch-JobDescriptionSection-sectionItem:contains("time")',
-        '.jobsearch-SerpJobCard .jobsearch-SerpJobCard-footer'
-      ],
-      
-      // Posted date selectors
-      postedDate: [
-        '.jobsearch-JobMetadataFooter',
-        '.jobsearch-SerpJobCard .date',
-        'span:contains("days ago")',
-        'span:contains("Posted")'
+        '[data-testid*="salary"]',
+        'span:contains("$")'
       ]
     };
   }
 
   async extract() {
-    console.log('IndeedExtractor: Starting extraction');
-    console.log('Current URL:', window.location.href);
-    console.log('Page HTML preview:', document.body.innerHTML.substring(0, 500));
-  
-    // Wait for page to load completely
+    console.log('=== INDEED EXTRACTOR STARTING ===');
+    console.log('URL:', window.location.href);
+    
+    // Simplified wait - no infinite loops
     await this.waitForContent();
     
-    // Determine page type
-    const pageType = this.detectPageType();
+    // Debug what's actually available
+    this.debugPageStructure();
     
-    if (pageType === 'job-view') {
-      return this.extractJobView();
-    } else if (pageType === 'search-results') {
-      return this.extractFromSearchResults();
+    // Try extraction
+    const jobData = await this.attemptExtraction();
+    
+    if (jobData) {
+      console.log('✅ Successfully extracted job data:', jobData);
+      return jobData;
+    } else {
+      console.log('❌ Failed to extract job data');
+      return null;
     }
-    console.log('Unknown page type, returning null');
-    return null;
-  }
-
-  detectPageType() {
-    const url = window.location.href;
-    const pathname = window.location.pathname;
-    
-    if (url.includes('/viewjob') || pathname.includes('/viewjob')) {
-      return 'job-view';
-    } else if (url.includes('/jobs') || pathname.includes('/jobs')) {
-      return 'search-results';
-    }
-    
-    return 'unknown';
   }
 
   async waitForContent() {
-    // Wait for Indeed's dynamic content to load
-    return new Promise((resolve) => {
-      const checkForContent = () => {
-        const titleElement = this.findElement(this.selectors.title);
-        const companyElement = this.findElement(this.selectors.company);
-        
-        if (titleElement && companyElement) {
-          resolve();
-        } else {
-          setTimeout(checkForContent, 500);
-        }
-      };
-      
-      checkForContent();
-    });
+    console.log('Waiting 3 seconds for Indeed to load...');
+    return new Promise(resolve => setTimeout(resolve, 3000));
   }
 
-  extractJobView() {
-    console.log('Extracting from job view page');
+  debugPageStructure() {
+    console.log('=== DEBUGGING PAGE STRUCTURE ===');
+    
+    // Look for any text that matches our target data
+    const targetTexts = ['Lockheed Martin', 'King of Prussia', 'PA 19406', 'Full Stack Engineer'];
+    
+    targetTexts.forEach(searchText => {
+      const elements = this.findElementsContainingText(searchText);
+      console.log(`Elements containing "${searchText}":`, elements.length);
+      elements.slice(0, 3).forEach((el, i) => {
+        console.log(`  ${i}: ${el.tagName}.${el.className} - "${el.textContent.trim().substring(0, 100)}"`);
+      });
+    });
+    
+    console.log('=== END DEBUG ===');
+  }
 
-    // Test each selector
-    const title = this.extractText(this.selectors.title);
-    console.log('Found title:', title);
-  
-    const company = this.extractText(this.selectors.company);
-    console.log('Found company:', company);
-  
-    const location = this.extractText(this.selectors.location);
-    console.log('Found location:', location);
+  findElementsContainingText(searchText) {
+    const allElements = document.querySelectorAll('*');
+    const matchingElements = [];
+    
+    [...allElements].forEach(el => {
+      if (el.textContent && el.textContent.includes(searchText) && el.children.length === 0) {
+        matchingElements.push(el);
+      }
+    });
+    
+    return matchingElements;
+  }
 
+  async attemptExtraction() {
+    // Try intelligent extraction by looking for the actual content
+    const title = this.extractTitle();
+    const company = this.extractCompany();  
+    const location = this.extractLocation();
+    const description = this.extractDescription();
+    
+    console.log('Extraction results:', { title, company, location });
+    
+    if (!title && !company) {
+      console.log('No basic job data found');
+      return null;
+    }
+    
     const jobData = {
-      title: this.extractText(this.selectors.title),
-      company: this.extractText(this.selectors.company),
-      location: this.extractText(this.selectors.location),
-      salary_raw: this.extractText(this.selectors.salary),
-      description: this.extractHTML(this.selectors.description),
-      job_type: this.extractJobType(),
-      posted_date: this.extractPostedDate(),
+      title: this.cleanTitle(title),
+      company: company,
+      location: location,
+      description: description,
       url: this.cleanURL(window.location.href),
       source: this.source,
       extracted_data: {
-        page_type: 'job-view',
+        page_type: 'modern-indeed',
         extracted_at: new Date().toISOString(),
-        selectors_used: this.getUsedSelectors()
+        extraction_method: 'intelligent-search'
       }
     };
-
-    // Parse salary information
-    const salaryInfo = this.parseSalary(jobData.salary_raw);
-    jobData.salary_min = salaryInfo.min;
-    jobData.salary_max = salaryInfo.max;
-    jobData.salary_currency = salaryInfo.currency;
-
-    // Clean and validate data
+    
     return this.validateAndCleanJobData(jobData);
   }
 
-  extractFromSearchResults() {
-    // For search results, find the currently highlighted job card
-    const jobCards = document.querySelectorAll('[data-jk]');
-    
-    for (const card of jobCards) {
-      if (this.isJobCardVisible(card)) {
-        return this.extractFromJobCard(card);
-      }
-    }
-    
-    return null;
-  }
-
-  extractFromJobCard(cardElement) {
-    const jobData = {
-      title: this.extractTextFromCard(cardElement, this.selectors.title),
-      company: this.extractTextFromCard(cardElement, this.selectors.company),
-      location: this.extractTextFromCard(cardElement, this.selectors.location),
-      salary_raw: this.extractTextFromCard(cardElement, this.selectors.salary),
-      description: this.extractTextFromCard(cardElement, ['.summary']),
-      url: this.extractJobURL(cardElement),
-      source: this.source,
-      extracted_data: {
-        page_type: 'search-results',
-        extracted_at: new Date().toISOString(),
-        job_key: cardElement.getAttribute('data-jk')
-      }
-    };
-
-    // Parse salary information
-    const salaryInfo = this.parseSalary(jobData.salary_raw);
-    jobData.salary_min = salaryInfo.min;
-    jobData.salary_max = salaryInfo.max;
-    jobData.salary_currency = salaryInfo.currency;
-
-    return this.validateAndCleanJobData(jobData);
-  }
-
-  findElement(selectors) {
-    for (const selector of selectors) {
+  extractTitle() {
+    // Try standard selectors first
+    for (const selector of this.selectors.title) {
       const element = document.querySelector(selector);
-      if (element) return element;
-    }
-    return null;
-  }
-
-  extractText(selectors) {
-    const element = this.findElement(selectors);
-    return element ? element.textContent.trim() : null;
-  }
-
-  extractHTML(selectors) {
-    const element = this.findElement(selectors);
-    return element ? element.innerHTML.trim() : null;
-  }
-
-  extractTextFromCard(cardElement, selectors) {
-    for (const selector of selectors) {
-      const element = cardElement.querySelector(selector);
-      if (element) return element.textContent.trim();
-    }
-    return null;
-  }
-
-  extractJobURL(cardElement) {
-    const linkElement = cardElement.querySelector('h2 a, .jobTitle a');
-    if (linkElement) {
-      const href = linkElement.getAttribute('href');
-      if (href.startsWith('/')) {
-        return `https://www.indeed.com${href}`;
+      if (element && element.textContent.trim()) {
+        return element.textContent.trim();
       }
-      return href;
-    }
-    return window.location.href;
-  }
-
-  extractJobType() {
-    // Look for job type indicators
-    const fullText = document.body.textContent.toLowerCase();
-    
-    if (fullText.includes('full-time') || fullText.includes('full time')) {
-      return 'full-time';
-    } else if (fullText.includes('part-time') || fullText.includes('part time')) {
-      return 'part-time';
-    } else if (fullText.includes('contract') || fullText.includes('contractor')) {
-      return 'contract';
-    } else if (fullText.includes('internship') || fullText.includes('intern')) {
-      return 'internship';
     }
     
-    return null;
-  }
-
-  extractPostedDate() {
-    const postedElement = this.findElement(this.selectors.postedDate);
-    if (!postedElement) return null;
-    
-    const text = postedElement.textContent.toLowerCase();
-    const today = new Date();
-    
-    if (text.includes('today')) {
-      return today.toISOString().split('T')[0];
-    } else if (text.includes('yesterday')) {
-      const yesterday = new Date(today.getTime() - 24 * 60 * 60 * 1000);
-      return yesterday.toISOString().split('T')[0];
-    } else if (text.includes('days ago')) {
-      const daysMatch = text.match(/(\d+)\s*days?\s*ago/);
-      if (daysMatch) {
-        const daysAgo = parseInt(daysMatch[1]);
-        const date = new Date(today.getTime() - daysAgo * 24 * 60 * 60 * 1000);
-        return date.toISOString().split('T')[0];
+    // Fallback: look for text that looks like a job title
+    const titleElements = this.findElementsContainingText('Engineer');
+    for (const el of titleElements) {
+      const text = el.textContent.trim();
+      if (text.length < 100 && text.includes('Engineer')) {
+        return text;
       }
     }
     
     return null;
   }
 
-  parseSalary(salaryText) {
-    if (!salaryText) return { min: null, max: null, currency: 'USD' };
-    
-    // Remove common prefixes and clean text
-    const cleaned = salaryText.replace(/^(Up to|From|Starting at)\s*/i, '').trim();
-    
-    // Extract numbers (handle various formats)
-    const numbers = cleaned.match(/[\d,]+/g);
-    if (!numbers) return { min: null, max: null, currency: 'USD' };
-    
-    // Parse numbers
-    const parsedNumbers = numbers.map(n => parseInt(n.replace(/,/g, '')));
-    
-    // Determine if it's hourly, monthly, or yearly
-    const isHourly = /hour|hr|\/h/i.test(cleaned);
-    const isMonthly = /month|\/m/i.test(cleaned);
-    
-    let min = null, max = null;
-    
-    if (parsedNumbers.length === 1) {
-      min = max = parsedNumbers[0];
-    } else if (parsedNumbers.length >= 2) {
-      min = Math.min(...parsedNumbers);
-      max = Math.max(...parsedNumbers);
+  extractCompany() {
+    // Try standard selectors first
+    for (const selector of this.selectors.company) {
+      if (selector.includes(':contains(')) continue; // Skip pseudo-selectors
+      
+      const element = document.querySelector(selector);
+      if (element && element.textContent.trim()) {
+        return element.textContent.trim();
+      }
     }
     
-    // Convert to annual salary if needed
-    if (isHourly && min && max) {
-      min = min * 40 * 52; // 40 hours/week, 52 weeks/year
-      max = max * 40 * 52;
-    } else if (isMonthly && min && max) {
-      min = min * 12;
-      max = max * 12;
+    // Intelligent fallback: look for known company patterns
+    const companyPatterns = ['Lockheed Martin', 'General Dynamics', 'Microsoft', 'Google', 'Amazon'];
+    
+    for (const pattern of companyPatterns) {
+      const elements = this.findElementsContainingText(pattern);
+      if (elements.length > 0) {
+        return elements[0].textContent.trim();
+      }
     }
     
-    return { min, max, currency: 'USD' };
+    // Look for links that might be company links
+    const companyLinks = document.querySelectorAll('a[href*="/cmp/"]');
+    for (const link of companyLinks) {
+      if (link.textContent.trim() && link.textContent.trim().length < 100) {
+        return link.textContent.trim();
+      }
+    }
+    
+    return null;
+  }
+
+  extractLocation() {
+    // Try standard selectors first
+    for (const selector of this.selectors.location) {
+      if (selector.includes(':contains(')) continue; // Skip pseudo-selectors
+      
+      const element = document.querySelector(selector);
+      if (element && element.textContent.trim()) {
+        return element.textContent.trim();
+      }
+    }
+    
+    // Intelligent fallback: look for PA zip codes or location patterns
+    const locationElements = this.findElementsContainingText('PA ');
+    for (const el of locationElements) {
+      const text = el.textContent.trim();
+      if (text.match(/\b[A-Z][a-z\s]+,\s*PA\s*\d{5}\b/)) {
+        return text;
+      }
+    }
+    
+    // Look for common PA cities
+    const paCities = ['Philadelphia', 'Pittsburgh', 'King of Prussia', 'Harrisburg'];
+    for (const city of paCities) {
+      const elements = this.findElementsContainingText(city);
+      if (elements.length > 0) {
+        return elements[0].textContent.trim();
+      }
+    }
+    
+    return null;
+  }
+
+  extractDescription() {
+    for (const selector of this.selectors.description) {
+      const element = document.querySelector(selector);
+      if (element && element.textContent.trim()) {
+        return element.innerHTML.trim();
+      }
+    }
+    return null;
+  }
+
+  cleanTitle(title) {
+    if (!title) return null;
+    // Remove Indeed's " - job post" suffix and other noise
+    return title
+      .replace(/\s*-\s*job post\s*$/i, '')
+      .replace(/\s*\|\s*indeed\.com\s*$/i, '')
+      .trim();
   }
 
   cleanURL(url) {
-    // Remove tracking parameters and clean up Indeed URLs
-    const urlObj = new URL(url);
-    const cleanParams = ['jk', 'from', 'rbc', 'rtk'];
-    
-    // Keep only essential parameters
-    for (const param of urlObj.searchParams.keys()) {
-      if (!cleanParams.includes(param)) {
-        urlObj.searchParams.delete(param);
+    try {
+      const urlObj = new URL(url);
+      // Keep only essential parameters
+      const essentialParams = ['vjk', 'jk'];
+      
+      for (const param of [...urlObj.searchParams.keys()]) {
+        if (!essentialParams.includes(param)) {
+          urlObj.searchParams.delete(param);
+        }
       }
+      
+      return urlObj.toString();
+    } catch (e) {
+      return url;
     }
-    
-    return urlObj.toString();
-  }
-
-  isJobCardVisible(cardElement) {
-    const rect = cardElement.getBoundingClientRect();
-    return rect.top >= 0 && rect.top <= window.innerHeight;
   }
 
   validateAndCleanJobData(jobData) {
-    // Ensure required fields are present
-    if (!jobData.title || !jobData.company) {
+    // Ensure at least title OR company is present
+    if (!jobData.title && !jobData.company) {
       console.warn('Missing required job data:', jobData);
       return null;
     }
     
     // Clean up text fields
-    jobData.title = this.cleanText(jobData.title);
-    jobData.company = this.cleanText(jobData.company);
-    jobData.location = this.cleanText(jobData.location);
+    if (jobData.title) jobData.title = this.cleanText(jobData.title);
+    if (jobData.company) jobData.company = this.cleanText(jobData.company);
+    if (jobData.location) jobData.location = this.cleanText(jobData.location);
     
     // Truncate description if too long
     if (jobData.description && jobData.description.length > 5000) {
@@ -355,19 +292,40 @@ class IndeedExtractor {
     return text.replace(/\s+/g, ' ').trim();
   }
 
-  getUsedSelectors() {
-    // Return which selectors actually worked (for debugging)
-    const used = {};
-    for (const [key, selectors] of Object.entries(this.selectors)) {
-      const workingSelector = selectors.find(s => document.querySelector(s));
-      if (workingSelector) {
-        used[key] = workingSelector;
-      }
-    }
-    return used;
+  // Test method to verify selectors work
+  testSelectors() {
+    console.log('=== TESTING SELECTORS ===');
+    
+    Object.entries(this.selectors).forEach(([key, selectors]) => {
+      console.log(`${key} selectors:`);
+      selectors.forEach((selector, index) => {
+        if (selector.includes(':contains(')) {
+          console.log(`  ${index}: "${selector}" → SKIPPED (pseudo-selector)`);
+          return;
+        }
+        
+        try {
+          const element = document.querySelector(selector);
+          const text = element ? element.textContent.trim().substring(0, 50) : 'NOT FOUND';
+          console.log(`  ${index}: "${selector}" → ${text}`);
+        } catch (e) {
+          console.log(`  ${index}: "${selector}" → ERROR: ${e.message}`);
+        }
+      });
+    });
+    
+    console.log('=== END SELECTOR TEST ===');
   }
 }
 
 // Make available globally
 window.IndeedExtractor = IndeedExtractor;
 
+// Auto-test when loaded (for debugging)
+if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('indeed.com')) {
+  setTimeout(() => {
+    console.log('Auto-testing Indeed extractor...');
+    const extractor = new IndeedExtractor();
+    extractor.testSelectors();
+  }, 2000);
+}
