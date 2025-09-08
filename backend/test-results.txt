@@ -1,0 +1,172 @@
+[0;34m======================================[0m
+[0;34m  JOB TRACKER API TESTING SCRIPT[0m
+[0;34m======================================[0m
+
+[0;34m1. Testing Health Check[0m
+[1;33mTesting: GET [0m
+[0;31m✗ Failed (404)[0m
+{
+  "error": "Route not found"
+}
+
+[0;32m✓ Health endpoint accessible[0m
+
+[0;34m2. Testing User Registration[0m
+[1;33mTesting: POST /auth/register[0m
+[0;32m✓ Success (201)[0m
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": "befe452b-7952-40a3-801d-4f9ed3554bb2",
+    "email": "karalar.alpefe+test30@gmail.com"
+  }
+}
+
+[0;34m3. Testing User Login[0m
+[1;33mTesting: POST /auth/login[0m
+[0;32m✓ Success (200)[0m
+{
+  "message": "Login successful",
+  "user": {
+    "id": "a633f556-dbc5-4b4a-a99e-82e02927d11f",
+    "email": "karalar.alpefe+test@gmail.com"
+  },
+  "session": {
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6InZtOExYSDRsQmpzR1JQZDkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3VqbG5qcHp4bGNobG5icXdzcXVnLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhNjMzZjU1Ni1kYmM1LTRiNGEtYTk5ZS04MmUwMjkyN2QxMWYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3Mzc4NTYyLCJpYXQiOjE3NTczNzQ5NjIsImVtYWlsIjoia2FyYWxhci5hbHBlZmUrdGVzdEBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoia2FyYWxhci5hbHBlZmUrdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyc3RfbmFtZSI6IlRlc3QiLCJsYXN0X25hbWUiOiJVc2VyIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiJhNjMzZjU1Ni1kYmM1LTRiNGEtYTk5ZS04MmUwMjkyN2QxMWYifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1NzM3NDk2Mn1dLCJzZXNzaW9uX2lkIjoiZTBiZGQ2NDMtMTg3My00NDA0LWIzNmQtODc4NWQyZTQ3NGI5IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0._0GBlyWxMvKg3ovyjEjdZNYYy7J6qah7CZSQw5t_4V8",
+    "refresh_token": "nr5nfxm7xadw",
+    "expires_at": 1757378562
+  }
+}
+
+[0;32m✓ Token extracted: eyJhbGciOiJIUzI1NiIs...[0m
+
+[0;34m4. Testing Get Current User[0m
+[1;33mTesting: GET /auth/me[0m
+[0;32m✓ Success (200)[0m
+{
+  "user": {
+    "id": "a633f556-dbc5-4b4a-a99e-82e02927d11f",
+    "email": "karalar.alpefe+test@gmail.com",
+    "user_metadata": {
+      "email": "karalar.alpefe+test@gmail.com",
+      "email_verified": true,
+      "first_name": "Test",
+      "last_name": "User",
+      "phone_verified": false,
+      "sub": "a633f556-dbc5-4b4a-a99e-82e02927d11f"
+    }
+  }
+}
+
+[0;34m5. Testing Create Job[0m
+[1;33mTesting: POST /jobs[0m
+[0;31m✗ Failed (400)[0m
+{
+  "error": "Validation failed",
+  "details": [
+    "\"source\" must be one of [indeed, linkedin, glassdoor, company_website, nittany_careers, other]"
+  ]
+}
+
+[0;34m6. Testing Get Jobs[0m
+[1;33mTesting: GET /jobs[0m
+[0;32m✓ Success (200)[0m
+{
+  "jobs": [
+    {
+      "id": "cc6ac3dd-84da-498b-b4e0-a351ea42b622",
+      "user_id": "a633f556-dbc5-4b4a-a99e-82e02927d11f",
+      "title": "Software Engineer - Entertainment Metadata Platform",
+      "company": "Comcast Corporation",
+      "url": "https://www.indeed.com/jobs?vjk=8d1c009556890b16",
+      "description": "<div>\n Make your mark at Comcast - a Fortune 30 global media and technology company. From the connectivity and platforms we provide, to the content and experiences we create, we reach hundreds of millions of customers, viewers, and guests worldwide. Become part of our award-winning technology team that turns big ideas into cutting-edge products, platforms, and solutions that our customers love. We create space to innovate, and we recognize, reward, and invest in your ideas, while ensuring you can proudly bring your authentic self to the workplace. Join us. You’ll do the best work of your career right here at Comcast. (In most cases, Comcast prefers to have employees on-site collaborating unless the team has been designated as virtual due to the nature of their work. If a position is listed with both office locations and virtual offerings, Comcast may be willing to consider candidates who live greater than 100 miles from the office for the remote option.)\n <p><b><br> Job Summary</b></p> Responsible for planning and designing new software and web applications. Edits new and existing applications. Implements, testing and debugging defined software components. Documents all development activity. Works with moderate guidance in own area of knowledge.\n <p><b> Job Description</b></p>\n <p><b> *This position is unable to provide work authorization sponsorship or immigration support now or in the future.*</b></p>\n <p></p>\n <p>The Technology + Product organization works at the intersection of media and technology and our innovative teams are continually developing and delivering products and next-generation technologies that transform the customer experience.</p>\n <p></p>\n <p><b> Join Us in Powering the Future of Entertainment Metadata</b></p>\n <p>We’re building a world-class API platform that delivers rich entertainment metadata to Comcast’s suite of television, web, and mobile products. Our backend services ingest, synthesize, and deliver massive volumes of data to millions of customers across the globe—so scalability and reliability aren’t just goals, they’re requirements.</p>\n <p><br> As a software engineer on our team, you’ll be involved in every phase of the development cycle: from gathering requirements to implementation, testing, and deployment. You’re someone who can take an open-ended product description and translate it into elegant, high-performance code.</p>\n <p>If you’re passionate about building scalable solutions, solving complex data challenges, and working on technology that touches millions of lives, we’d love to hear from you.</p>\n <p></p>\n <p><b> Responsibilities:</b></p>\n <ul>\n  <li>Analyzes and determines integration needs.</li>\n  <li>Evaluates and plans software designs, test results and technical manuals.</li>\n  <li>Reviews literature, patents and current practices relevant to the solution of assigned projects.</li>\n  <li>Programs new software, web applications and supports new applications under development and the customization of current applications.</li>\n  <li>Edits and reviews technical requirements documentation.</li>\n  <li>Works with Quality Assurance team to determine if applications fit specification and technical requirements.</li>\n  <li>Displays knowledge of engineering methodologies, concepts, skills and their application in the area of specified engineering specialty.</li>\n  <li>Displays knowledge of and ability to apply, process design and redesign skills.</li>\n  <li>Displays in-depth knowledge of and ability to apply, project management skills.</li>\n  <li>Consistent exercise of independent judgment and discretion in matters of significance.</li>\n  <li>Regular, consistent and punctual attendance. Must be able to work nights and weekends, variable schedule(s) and overtime as necessary.</li>\n  <li>Other duties and responsibilities as assigned.</li>\n </ul>\n <p></p>\n <p><b> Required Qualifications:</b></p>\n <ul>\n  <li>Knowledge of Object-Oriented design and patterns</li>\n  <li>1-2 years of experience and proficiency with Java</li>\n  <li>Good communication skills: verbal, written, and listening</li>\n </ul>\n <p></p>\n <p><b> Additional Highly Desirable Qualifications:</b></p>\n <ul>\n  <li>UNIX, Linux, or Mac background</li>\n  <li>Understanding of or desire to learn JVM performance tuning</li>\n  <li>Knowledge of SQL and/or NoSQL databases (e.g. MongoDB)</li>\n  <li>Experience with HTTP/REST and writing web services</li>\n  <li>Experience with systems monitoring (e.g. Grafana, Splunk Dashboard/Alerting)</li>\n  <li>Familiarity with a scripting language</li>\n  <li>Experience with data modeling in the entertainment domain</li>\n  <li>Familiarity with current trends and technologies around the social web</li>\n </ul>\n <p></p>\n <h2 class=\"jobSectionHeader\"><b> About Our Perks &amp; Benefits:</b></h2>\n <p>We are determined to create an environment where our employees feel valued, understand our business goals, and are motivated.</p>\n <p></p>\n <p><b> Here's a look at just some of the perks and benef...",
+      "location": "Philadelphia, PA 19103",
+      "salary_min": null,
+      "salary_max": null,
+      "salary_currency": "USD",
+      "job_type": null,
+      "experience_level": null,
+      "posted_date": null,
+      "deadline_date": null,
+      "source": "indeed",
+      "is_remote": false,
+      "extracted_data": {
+        "page_type": "modern-indeed",
+        "extracted_at": "2025-09-07T22:21:31.033Z",
+        "extraction_method": "intelligent-search"
+      },
+      "tags": [],
+      "notes": null,
+      "created_at": "2025-09-07T22:19:30.416836+00:00",
+      "updated_at": "2025-09-07T22:19:30.416836+00:00",
+      "application_status": null,
+      "applied_date": null,
+      "application_id": null
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 1,
+    "pages": 1
+  }
+}
+
+[0;34m7. Testing Get User Profile[0m
+[1;33mTesting: GET /users/profile[0m
+[0;32m✓ Success (200)[0m
+{
+  "id": "294693e5-77cb-4f7a-9a9e-61e61d22f071",
+  "user_id": "a633f556-dbc5-4b4a-a99e-82e02927d11f",
+  "first_name": "Test",
+  "last_name": "User",
+  "current_resume_url": null,
+  "linkedin_url": null,
+  "github_url": null,
+  "portfolio_url": null,
+  "target_locations": null,
+  "target_roles": [
+    "Software Engineer",
+    "Frontend Developer"
+  ],
+  "skills": [
+    "JavaScript",
+    "React",
+    "Node.js"
+  ],
+  "experience_years": 3,
+  "education": {},
+  "created_at": "2025-09-08T23:31:02.582424+00:00",
+  "updated_at": "2025-09-08T23:31:02.582424+00:00"
+}
+
+[0;34m8. Testing Update User Profile[0m
+[1;33mTesting: PUT /users/profile[0m
+[0;31m✗ Failed (400)[0m
+{
+  "error": "duplicate key value violates unique constraint \"user_profiles_user_id_key\""
+}
+
+[0;34m9. Testing Get Applications[0m
+[1;33mTesting: GET /applications[0m
+[0;32m✓ Success (200)[0m
+[]
+
+[0;34m10. Testing Logout[0m
+[1;33mTesting: POST /auth/logout[0m
+[0;32m✓ Success (200)[0m
+{
+  "message": "Logout successful"
+}
+
+[0;34m======================================[0m
+[0;34m  TESTING COMPLETE[0m
+[0;34m======================================[0m
+
+[1;33mIf any tests failed, check:[0m
+1. Backend server is running (npm run dev in backend/)
+2. Supabase environment variables are correct
+3. Database schema is created in Supabase
+4. CORS is configured properly
+
+[0;32mNext step: Test the frontend integration![0m
