@@ -1,287 +1,217 @@
 # Job Application Tracker
 
-AI-powered job application tracking system with Chrome extension for automatic job extraction from major job sites.
+A full-stack web application that helps job seekers track their applications, optimize resumes with AI, and manage their job search process efficiently.
 
-## Overview
+## 🚀 Features
 
-This project provides a comprehensive solution for tracking job applications with automated data extraction, AI-powered job matching, and professional application management. Built as a modern alternative to spreadsheet-based job tracking.
+- **User Authentication**: Secure login/registration with Supabase Auth
+- **Job Tracking**: Save and organize job applications by status
+- **Chrome Extension**: Save jobs directly from job sites while browsing
+- **AI Resume Optimization**: Get personalized resume suggestions using Google Gemini
+- **Application Analytics**: Track success rates and application metrics
+- **Real-time Sync**: Data syncs across web app and extension
 
-## Architecture
+## 🛠️ Tech Stack
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│  Chrome Ext     │    │   Web App       │    │   Backend API   │
-│  (Job Extract)  │◄──►│   (React SPA)   │◄──►│   (Node.js)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 ▼
-                    ┌─────────────────────────┐
-                    │    Supabase             │
-                    │  - PostgreSQL Database  │
-                    │  - Authentication       │
-                    │  - Real-time Engine     │
-                    └─────────────────────────┘
-```
+### Frontend
+- **React 18** - Component-based UI framework
+- **React Router** - Client-side routing
+- **Tailwind CSS** - Utility-first CSS framework
+- **Context API** - State management for authentication
 
-## Current Features
+### Backend
+- **Node.js** - Runtime environment
+- **Express.js** - Web application framework
+- **Supabase** - Database, authentication, and real-time subscriptions
+- **Google Gemini** - AI-powered resume and job analysis
 
-### ✅ Fully Working Features
+### Chrome Extension
+- **Manifest V3** - Modern extension platform
+- **Content Scripts** - Job data extraction from websites
+- **Background Service Worker** - API communication
 
-- **Complete Chrome Extension**
-  - Automatic job data extraction from Indeed
-  - Professional animated overlay UI for job saving
-  - Intelligent text search algorithms that adapt to Indeed's changes
-  - Handles Indeed's modern split-panel interface
-  - **Job saving to database working end-to-end**
-
-- **Authentication System**
-  - User registration and login through extension popup
-  - JWT token-based authentication with Chrome storage
-  - Secure session management across extension and backend
-  - **Complete auth flow tested and working**
-
-- **Backend API**
-  - Complete REST API with Express.js
-  - Supabase PostgreSQL integration with admin client
-  - User management and authentication
-  - **Job data storage fully functional**
-  - Comprehensive validation and error handling
-
-- **Database Integration**
-  - Normalized PostgreSQL schema
-  - Admin client pattern for reliable data operations
-  - Optimized indexes for performance
-  - **Jobs saving successfully to database with proper user association**
-
-- **Core MVP Workflow**
-  - **User can register/login through extension**
-  - **Extract job data from Indeed job pages**
-  - **Save jobs directly to database with one click**
-  - **Complete end-to-end functionality proven**
-
-### 🚧 Next Development Phase
-
-- **React Frontend Dashboard** (view and manage saved jobs)
-- **LinkedIn Job Extraction** (expand to second major job site)
-- **AI Integration** (Google Gemini for job matching and resume optimization)
-- **Application Status Tracking** (interview stages, follow-ups)
-
-## Tech Stack
-
-- **Backend**: Node.js, Express.js, Supabase (PostgreSQL)
-- **Extension**: Vanilla JavaScript, Chrome Extension Manifest v3
-- **Frontend**: React (planned)
-- **AI**: Google Gemini 1.5 Flash
-- **Authentication**: Supabase Auth with JWT
-- **Database**: PostgreSQL with Row Level Security
-
-## Project Structure
+## 📦 Project Structure
 
 ```
-job-application-tracker/
-├── backend/                    # Node.js API server
-│   ├── src/
-│   │   ├── routes/            # API endpoints
-│   │   ├── middleware/        # Auth, validation, rate limiting
-│   │   ├── services/          # AI service integration
-│   │   └── config/            # Database configuration
-│   └── package.json
-├── extension/                  # Chrome Extension
-│   ├── manifest.json          # Extension configuration
-│   ├── background/            # Service worker
-│   ├── content/               # Content scripts and extractors
-│   ├── popup/                 # Extension popup UI
-│   └── utils/                 # Shared utilities
-├── frontend/                   # React web app (planned)
-└── docs/                      # Documentation
+job-tracker/
+├── backend/                 # Node.js/Express API
+│   ├── config/             # Database and service configurations
+│   ├── middleware/         # Auth, validation, rate limiting
+│   ├── routes/            # API endpoints
+│   ├── services/          # Business logic (AI, email, etc.)
+│   └── server.js          # Main server file
+├── src/                   # React frontend
+│   ├── components/        # Reusable UI components
+│   ├── context/          # React Context providers
+│   ├── pages/            # Page components
+│   └── services/         # API client services
+└── extension/            # Chrome extension (coming soon)
+    ├── content/          # Content scripts
+    ├── background/       # Service worker
+    └── popup/           # Extension popup UI
 ```
 
-## Setup Instructions
+## 🏃‍♂️ Quick Start
 
 ### Prerequisites
-
-- Node.js 18+
+- Node.js 18+ and npm
 - Supabase account
-- Google AI Studio account (for Gemini API)
-- Chrome/Chromium browser
+- Google Gemini API key
 
-### Backend Setup
+### 1. Environment Setup
 
-1. **Clone and setup backend**
-   ```bash
-   cd backend
-   npm install
-   ```
+Create `.env` files in both root and backend directories:
 
-2. **Environment Configuration**
-   ```bash
-   cp .env.example .env
-   ```
+**Root `.env`:**
+```env
+REACT_APP_SUPABASE_URL=your_supabase_url
+REACT_APP_SUPABASE_ANON_KEY=your_supabase_anon_key
+```
 
-   Fill in your `.env` file:
-   ```env
-   PORT=3001
-   SUPABASE_URL=your-supabase-url
-   SUPABASE_ANON_KEY=your-anon-key
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
-   GEMINI_API_KEY=your-gemini-api-key
-   ```
+**Backend `.env`:**
+```env
+PORT=3001
+NODE_ENV=development
+SUPABASE_URL=your_supabase_url
+SUPABASE_ANON_KEY=your_supabase_anon_key
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key
+GEMINI_API_KEY=your_gemini_api_key
+FRONTEND_URL=http://localhost:3000
+```
 
-3. **Database Setup**
-   - Run the SQL scripts in `docs/database-schema.sql` in Supabase SQL Editor
-   - Verify tables are created with proper RLS policies
+### 2. Database Setup
 
-4. **Start Development Server**
-   ```bash
-   npm run dev
-   ```
+Run the SQL scripts in Supabase to create tables:
+```sql
+-- See backend/database/schema.sql for complete schema
+```
 
-   Verify health check: `http://localhost:3001/health`
+### 3. Install Dependencies
 
-### Chrome Extension Setup
+**Frontend:**
+```bash
+npm install
+```
 
-1. **Load Extension in Development**
-   - Open `chrome://extensions/` or `brave://extensions/`
-   - Enable "Developer mode"
-   - Click "Load unpacked"
-   - Select the `extension/` folder
+**Backend:**
+```bash
+cd backend
+npm install
+```
 
-2. **Test Extension**
-   - Click extension icon to open popup
-   - Register a new account or login
-   - Visit an Indeed job page
-   - Job extraction overlay should appear
+### 4. Start Development Servers
 
-### Testing the System
+**Frontend (Terminal 1):**
+```bash
+npm start
+# Runs on http://localhost:3000
+```
 
-1. **Backend API Test**
-   ```bash
-   curl http://localhost:3001/health
-   # Should return: {"status":"OK","timestamp":"...","uptime":...}
-   ```
+**Backend (Terminal 2):**
+```bash
+cd backend
+npm run dev
+# Runs on http://localhost:3001
+```
 
-2. **Extension Test**
-   - Go to any Indeed job page
-   - Extension overlay should appear with job details
-   - Click "Save Job" to test backend integration
+### 5. Test the Application
 
-3. **Authentication Test**
-   - Use extension popup to register/login
-   - Verify user appears in Supabase Auth dashboard
+Visit `http://localhost:3000` and:
+1. Register a new account
+2. Navigate through the dashboard
+3. Test authentication flows
 
-## Development Status
+## 🧪 Testing
 
-### Completed Milestones
+See [Testing Workflow Guide](docs/TESTING.md) for comprehensive testing instructions.
 
-- [x] Complete backend API architecture
-- [x] Database schema with RLS policies
-- [x] Chrome extension job extraction system
-- [x] Professional overlay UI design
-- [x] Authentication flow integration
-- [x] Indeed job site support
+**Quick Test:**
+```bash
+# Frontend
+npm test
 
-### Current Issues
+# Backend
+cd backend
+npm test
 
-- Job saving validation errors (schema mismatch)
-- Extension parsing Indeed bot check pages
-- Missing React frontend dashboard
+# Manual testing
+curl http://localhost:3001/health
+```
 
-### Next Development Priorities
-
-1. **Fix Validation Issues**: Debug schema mismatch between extension and backend
-2. **Build React Frontend**: Job dashboard with Kanban interface
-3. **Add LinkedIn Support**: Expand to second major job site
-4. **AI Integration**: Job matching and resume optimization features
-
-## API Documentation
+## 📚 API Documentation
 
 ### Authentication Endpoints
-
 - `POST /api/auth/register` - User registration
 - `POST /api/auth/login` - User login
-- `GET /api/auth/me` - Get current user
 - `POST /api/auth/logout` - User logout
+- `GET /api/auth/me` - Get current user
 
-### Job Management Endpoints
+### Job Management
+- `GET /api/jobs` - Get user's jobs
+- `POST /api/jobs` - Create new job
+- `PUT /api/jobs/:id` - Update job
+- `DELETE /api/jobs/:id` - Delete job
 
-- `GET /api/jobs` - List user's jobs with filtering/pagination
-- `POST /api/jobs` - Create new job entry
-- `PUT /api/jobs/:id` - Update job details
-- `DELETE /api/jobs/:id` - Delete job entry
+### AI Features
+- `POST /api/ai/job-match` - Analyze job compatibility
+- `POST /api/ai/resume-optimization` - Get resume suggestions
+- `POST /api/ai/company-research` - Generate company insights
 
-### Application Tracking
+## 🏗️ Development Roadmap
 
-- `GET /api/applications` - List applications
-- `POST /api/applications` - Create application record
-- `PATCH /api/applications/:id/status` - Update application status
+### Phase 1: Core MVP ✅
+- [x] User authentication
+- [x] Basic job tracking
+- [x] Frontend dashboard
+- [x] Backend API structure
 
-## Contributing
+### Phase 2: Enhanced Features (In Progress)
+- [ ] Chrome extension development
+- [ ] AI integration (Gemini)
+- [ ] Advanced job filtering
+- [ ] Application status tracking
 
-### Code Style
+### Phase 3: Advanced Features
+- [ ] Resume upload and parsing
+- [ ] Email integration
+- [ ] Analytics dashboard
+- [ ] Team collaboration features
 
-- Use consistent indentation (2 spaces)
-- Follow ESLint configuration
-- Add console logging for debugging
-- Include error handling for all async operations
+## 🚀 Deployment
 
-### Testing
+### Frontend (Vercel/Netlify)
+```bash
+npm run build
+# Deploy build/ directory
+```
 
-Currently using manual testing. Automated testing framework planned for future implementation.
+### Backend (Railway/Heroku)
+```bash
+cd backend
+# Deploy with your preferred platform
+```
 
-### Debugging
+## 🤝 Contributing
 
-- Backend: Check console logs with `npm run dev`
-- Extension: Use Chrome DevTools Console on job sites
-- Database: Monitor via Supabase dashboard
+1. Fork the repository
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
+5. Open a Pull Request
 
-## Competitive Analysis
+## 📄 License
 
-This system provides features comparable to:
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-- **Huntr** ($40/month): Job tracking with basic AI
-- **Teal** (Freemium): Resume optimization focus
-- **Simplify** (Free): Basic job tracking
+## 🆘 Support
 
-Our competitive advantages:
-- Advanced AI integration with Google Gemini
-- Professional Chrome extension with intelligent extraction
-- Open source and self-hosted option
-- Real-time synchronization across devices
+- 📧 Email: support@jobtracker.com
+- 💬 Discord: [Join our community](https://discord.gg/jobtracker)
+- 📚 Docs: [Documentation](https://docs.jobtracker.com)
 
-## Future Roadmap
+## 🙏 Acknowledgments
 
-### Short Term (2-4 weeks)
-- Fix current validation issues
-- Complete React frontend
-- Add LinkedIn job extraction
-- Basic AI job matching
-
-### Medium Term (1-3 months)
-- Resume optimization features
-- Interview preparation tools
-- Mobile app (React Native)
-- Advanced analytics dashboard
-
-### Long Term (3+ months)
-- Additional job sites (Glassdoor, company sites)
-- Salary negotiation assistance
-- Team collaboration features
-- API for third-party integrations
-
-## License
-
-[License to be determined]
-
-## Support
-
-For issues and questions:
-- Check console logs for error details
-- Verify backend is running on port 3001
-- Ensure Supabase credentials are correct
-- Confirm extension permissions are granted
-
----
-
-**Status**: Core functionality working, validation debugging in progress
-**Last Updated**: September 2025
+- Supabase for the backend infrastructure
+- Google Gemini for AI capabilities
+- React and Node.js communities
+- All contributors and testers
