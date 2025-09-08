@@ -17,8 +17,8 @@
 {
   "message": "User registered successfully",
   "user": {
-    "id": "befe452b-7952-40a3-801d-4f9ed3554bb2",
-    "email": "karalar.alpefe+test30@gmail.com"
+    "id": "96f0c60a-73a7-4982-baa7-4aa572fe1ba8",
+    "email": "karalar.alpefe+test22@gmail.com"
   }
 }
 
@@ -32,9 +32,9 @@
     "email": "karalar.alpefe+test@gmail.com"
   },
   "session": {
-    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6InZtOExYSDRsQmpzR1JQZDkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3VqbG5qcHp4bGNobG5icXdzcXVnLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhNjMzZjU1Ni1kYmM1LTRiNGEtYTk5ZS04MmUwMjkyN2QxMWYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3Mzc4NTYyLCJpYXQiOjE3NTczNzQ5NjIsImVtYWlsIjoia2FyYWxhci5hbHBlZmUrdGVzdEBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoia2FyYWxhci5hbHBlZmUrdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyc3RfbmFtZSI6IlRlc3QiLCJsYXN0X25hbWUiOiJVc2VyIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiJhNjMzZjU1Ni1kYmM1LTRiNGEtYTk5ZS04MmUwMjkyN2QxMWYifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1NzM3NDk2Mn1dLCJzZXNzaW9uX2lkIjoiZTBiZGQ2NDMtMTg3My00NDA0LWIzNmQtODc4NWQyZTQ3NGI5IiwiaXNfYW5vbnltb3VzIjpmYWxzZX0._0GBlyWxMvKg3ovyjEjdZNYYy7J6qah7CZSQw5t_4V8",
-    "refresh_token": "nr5nfxm7xadw",
-    "expires_at": 1757378562
+    "access_token": "eyJhbGciOiJIUzI1NiIsImtpZCI6InZtOExYSDRsQmpzR1JQZDkiLCJ0eXAiOiJKV1QifQ.eyJpc3MiOiJodHRwczovL3VqbG5qcHp4bGNobG5icXdzcXVnLnN1cGFiYXNlLmNvL2F1dGgvdjEiLCJzdWIiOiJhNjMzZjU1Ni1kYmM1LTRiNGEtYTk5ZS04MmUwMjkyN2QxMWYiLCJhdWQiOiJhdXRoZW50aWNhdGVkIiwiZXhwIjoxNzU3Mzc4ODg4LCJpYXQiOjE3NTczNzUyODgsImVtYWlsIjoia2FyYWxhci5hbHBlZmUrdGVzdEBnbWFpbC5jb20iLCJwaG9uZSI6IiIsImFwcF9tZXRhZGF0YSI6eyJwcm92aWRlciI6ImVtYWlsIiwicHJvdmlkZXJzIjpbImVtYWlsIl19LCJ1c2VyX21ldGFkYXRhIjp7ImVtYWlsIjoia2FyYWxhci5hbHBlZmUrdGVzdEBnbWFpbC5jb20iLCJlbWFpbF92ZXJpZmllZCI6dHJ1ZSwiZmlyc3RfbmFtZSI6IlRlc3QiLCJsYXN0X25hbWUiOiJVc2VyIiwicGhvbmVfdmVyaWZpZWQiOmZhbHNlLCJzdWIiOiJhNjMzZjU1Ni1kYmM1LTRiNGEtYTk5ZS04MmUwMjkyN2QxMWYifSwicm9sZSI6ImF1dGhlbnRpY2F0ZWQiLCJhYWwiOiJhYWwxIiwiYW1yIjpbeyJtZXRob2QiOiJwYXNzd29yZCIsInRpbWVzdGFtcCI6MTc1NzM3NTI4OH1dLCJzZXNzaW9uX2lkIjoiMjYyMTU3ODUtZjViMi00M2RkLThhOGItNjI3NTFlN2IzN2MwIiwiaXNfYW5vbnltb3VzIjpmYWxzZX0.bYF2RxS7-DJyGMeMHMToV7LrLNXb0Lcm7QfybmIo0Yk",
+    "refresh_token": "fehw4ixjmepi",
+    "expires_at": 1757378888
   }
 }
 
@@ -62,10 +62,8 @@
 [1;33mTesting: POST /jobs[0m
 [0;31m✗ Failed (400)[0m
 {
-  "error": "Validation failed",
-  "details": [
-    "\"source\" must be one of [indeed, linkedin, glassdoor, company_website, nittany_careers, other]"
-  ]
+  "error": "invalid input value for enum job_source_enum: \"manual\"",
+  "details": "Unknown database error"
 }
 
 [0;34m6. Testing Get Jobs[0m

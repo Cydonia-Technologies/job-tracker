@@ -18,7 +18,7 @@ const schemas = {
     experience_level: Joi.string().max(50).optional(),
     posted_date: Joi.date().optional(),
     deadline_date: Joi.date().optional(),
-    source: Joi.string().valid('indeed', 'linkedin', 'glassdoor', 'company_website', 'nittany_careers', 'other').optional(),
+    source: Joi.string().valid('indeed', 'linkedin', 'glassdoor', 'company_website', 'nittany_careers', 'manual', 'other').optional(),
     is_remote: Joi.boolean().optional(),
     tags: Joi.array().items(Joi.string().max(50)).optional(),
     notes: Joi.string().optional(),
