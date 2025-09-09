@@ -47,6 +47,35 @@ router.post('/resume-grade', async (req, res) => {
   }
 });
 
+// Debug endpoint to test Gemini connection
+router.get('/test-gemini', async (req, res) => {
+  try {
+    console.log('Testing Gemini connection...');
+    console.log('API Key present:', !!process.env.GEMINI_API_KEY);
+    
+    const { GoogleGenerativeAI } = require('@google/generative-ai');
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash' });
+    
+    const result = await model.generateContent({
+      contents: [{ parts: [{ text: 'Say "Hello World" in JSON format: {"message": "Hello World"}' }] }],
+      generationConfig: { temperature: 0.1, maxOutputTokens: 100 }
+    });
+    
+    res.json({ 
+      success: true, 
+      response: result.response.text(),
+      api_key_present: !!process.env.GEMINI_API_KEY
+    });
+  } catch (error) {
+    console.error('Gemini test error:', error);
+    res.status(500).json({ 
+      error: error.message,
+      api_key_present: !!process.env.GEMINI_API_KEY
+    });
+  }
+});
+
 // Apply authentication to all remaining AI routes
 router.use(authenticateUser);
 
