@@ -1,0 +1,26 @@
+Analyze this resume against the job posting and provide specific optimization suggestions.
+
+RESUME CONTENT:
+{{RESUME_TEXT}}
+
+JOB POSTING:
+- Title: {{JOB_TITLE}}
+- Company: {{JOB_COMPANY}}
+- Description: {{JOB_DESCRIPTION}}
+
+Analyze and provide ONLY valid JSON in this exact format:
+{
+  "keyword_suggestions": ["React", "Node.js", "AWS"],
+  "skills_to_highlight": ["JavaScript proficiency", "Team leadership"],
+  "experience_adjustments": ["Emphasize backend development projects", "Quantify achievements with metrics"],
+  "section_recommendations": {
+    "summary": "Add a professional summary highlighting relevant experience",
+    "skills": "Move technical skills section higher",
+    "experience": "Use action verbs and quantify achievements"
+  },
+  "missing_keywords": ["Agile", "CI/CD", "REST APIs"],
+  "overall_score": 78,
+  "priority_changes": ["Add missing keywords", "Quantify achievements", "Reorder sections"]
+}
+
+Be specific and actionable with suggestions.

@@ -1,0 +1,27 @@
+Analyze the compatibility between this candidate and job posting. Provide a detailed analysis in JSON format.
+
+CANDIDATE PROFILE:
+- Skills: {{USER_SKILLS}}
+- Experience: {{USER_EXPERIENCE}} years
+- Target Roles: {{USER_TARGET_ROLES}}
+- Target Locations: {{USER_TARGET_LOCATIONS}}
+
+JOB POSTING:
+- Title: {{JOB_TITLE}}
+- Company: {{JOB_COMPANY}}
+- Location: {{JOB_LOCATION}}
+- Description: {{JOB_DESCRIPTION}}
+
+Analyze and respond with ONLY valid JSON in this exact format:
+{
+  "match_score": 85,
+  "skills_match": 90,
+  "experience_match": 80,
+  "location_match": 95,
+  "overall_assessment": "Strong match with excellent skill alignment",
+  "strengths": ["React expertise matches requirements", "Location preference aligns"],
+  "gaps": ["Could benefit from more backend experience", "Certification in AWS would be helpful"],
+  "recommendations": ["Highlight React projects in application", "Consider AWS certification"]
+}
+
+Provide scores out of 100 and be specific about strengths and gaps.

@@ -5,10 +5,49 @@
 const express = require('express');
 const { supabase } = require('../config/database');
 const { authenticateUser } = require('../middleware/auth');
-const { analyzeJobMatch, optimizeResume, generateCompanyResearch } = require('../services/aiService');
+const { analyzeJobMatch, optimizeResume, generateCompanyResearch, gradeResume } = require('../services/aiService');
 const router = express.Router();
 
-// Apply authentication to all AI routes
+// PUBLIC ENDPOINT - Resume grading without authentication
+router.post('/resume-grade', async (req, res) => {
+  try {
+    const { resume_text } = req.body;
+
+    if (!resume_text || resume_text.trim().length === 0) {
+      return res.status(400).json({ error: 'Resume text is required' });
+    }
+
+    if (resume_text.trim().length < 100) {
+      return res.status(400).json({ error: 'Resume appears too short. Please provide a complete resume.' });
+    }
+
+    const analysis = await gradeResume(resume_text);
+
+    res.json({
+      success: true,
+      analysis: {
+        overall_score: analysis.overall_score,
+        category_scores: analysis.category_scores,
+        strengths: analysis.strengths,
+        improvements: analysis.improvements,
+        critical_issues: analysis.critical_issues,
+        recommendation: analysis.recommendation
+      },
+      metadata: {
+        processed_at: new Date().toISOString(),
+        cost_estimate: `$${analysis.metadata.cost_usd.toFixed(6)}`,
+        processing_time: `${analysis.metadata.processing_time_ms}ms`
+      }
+    });
+  } catch (error) {
+    console.error('Resume grade error:', error);
+    res.status(500).json({
+      error: 'Unable to analyze resume. Please check your resume format and try again.'
+    });
+  }
+});
+
+// Apply authentication to all remaining AI routes
 router.use(authenticateUser);
 
 // POST /api/ai/job-match - Analyze job match score
@@ -267,4 +306,3 @@ router.get('/usage-stats', async (req, res) => {
 });
 
 module.exports = router;
-
