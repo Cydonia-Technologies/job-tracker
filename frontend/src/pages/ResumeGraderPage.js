@@ -59,7 +59,7 @@ const ResumeGraderPage = () => {
       const formData = new FormData();
       formData.append('resume', file);
 
-      const response = await fetch(`${process.env.REACT_APP_API_URL}/ai/resume-grade`, {
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/ai/resume-grade`, {
         method: 'POST',
         body: formData,
       });
