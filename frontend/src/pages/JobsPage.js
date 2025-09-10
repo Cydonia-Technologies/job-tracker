@@ -1,12 +1,12 @@
 // src/pages/JobsPage.js
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback} from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import apiService from '../services/api';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 
 const JobsPage = () => {
-  const { user, signOut } = useAuth();
+  const { signOut } = useAuth();
   const [jobs, setJobs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -14,30 +14,32 @@ const JobsPage = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddJobModal, setShowAddJobModal] = useState(false);
 
-  useEffect(() => {
-    fetchJobs();
-  }, [filter]);
-
-  const fetchJobs = async () => {
+  // Use useCallback to memoize fetchJobs function
+  const fetchJobs = useCallback(async () => {
     try {
       setLoading(true);
-      setError(null);
-
-      const params = {
-        ...(filter !== 'all' && { status: filter }),
-        sort_by: 'created_at',
-        sort_order: 'desc'
-      };
-
-      const response = await apiService.getJobs(params);
-      setJobs(response.jobs || []);
+      const response = await fetch(`${process.env.REACT_APP_API_URL}/api/jobs`, {
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch jobs');
+      }
+      
+      const data = await response.json();
+      setJobs(data.jobs || data);
     } catch (err) {
-      console.error('Jobs fetch error:', err);
-      setError('Failed to load jobs. Please try refreshing.');
+      setError(err.message);
     } finally {
       setLoading(false);
     }
-  };
+  }, []); // Empty dependency array since it doesn't depend on any props or state
+
+  useEffect(() => {
+    fetchJobs();
+  }, [fetchJobs]); // Now fetchJobs is included in dependencies
 
   const filteredJobs = jobs.filter(job => {
     const matchesSearch = searchTerm === '' || 
