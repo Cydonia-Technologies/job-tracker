@@ -34,41 +34,6 @@ job-tracker-backend/
 */
 
 // =====================================================
-// 1. PACKAGE.JSON
-// =====================================================
-/*
-{
-  "name": "job-tracker-backend",
-  "version": "1.0.0",
-  "description": "Backend API for Job Application Tracker",
-  "main": "server.js",
-  "scripts": {
-    "start": "node server.js",
-    "dev": "nodemon server.js",
-    "test": "jest"
-  },
-  "dependencies": {
-    "express": "^4.18.2",
-    "cors": "^2.8.5",
-    "helmet": "^7.1.0",
-    "morgan": "^1.10.0",
-    "dotenv": "^16.3.1",
-    "@supabase/supabase-js": "^2.38.5",
-    "joi": "^17.11.0",
-    "bcryptjs": "^2.4.3",
-    "jsonwebtoken": "^9.0.2",
-    "rate-limiter-flexible": "^3.0.8",
-    "multer": "^1.4.5-lts.1",
-    "pdf-parse": "^1.1.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.0.2",
-    "jest": "^29.7.0"
-  }
-}
-*/
-
-// =====================================================
 // 2. ENVIRONMENT VARIABLES (.env.example)
 // =====================================================
 /*
@@ -142,11 +107,12 @@ app.use(helmet({
 app.use(cors({
   origin: [
     process.env.FRONTEND_URL,
-    `chrome-extension://${process.env.EXTENSION_ID}`,
+    'https://job-tracker-weld-three.vercel.app',
+    'https://job-tracker-a328d75pp-efekaralars-projects.vercel.app', // Add this
     'http://localhost:3000',
-    'http://localhost:3001'
+    `chrome-extension://${process.env.EXTENSION_ID}`
   ],
-  credentials: true,
+  credentials: true
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
