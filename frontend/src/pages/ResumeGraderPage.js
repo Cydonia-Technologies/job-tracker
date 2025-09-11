@@ -187,10 +187,11 @@ const ResumeGraderPage = () => {
         </div>
 
         {/* Main Content */}
-        <div className="grid lg:grid-cols-2 gap-12 items-start">
+        <div className="max-w-4xl mx-auto">
           {/* Upload/Results Section */}
           {!hasAnalyzed ? (
-            <div className="bg-white rounded-xl shadow-lg p-8">
+            // Upload Section (before analysis)
+            <div className="bg-white rounded-xl shadow-lg p-8 max-w-2xl mx-auto">
               <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload Your Resume</h2>
               
               {!file ? (
@@ -271,191 +272,182 @@ const ResumeGraderPage = () => {
               )}
             </div>
           ) : (
-            // Analysis Results Section (replaces upload)
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <div className="flex items-center justify-between mb-6">
-                <h2 className="text-2xl font-bold text-gray-900">AI Analysis Results</h2>
-                <button
-                  onClick={handleUpgradePrompt}
-                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
-                >
-                  Analyze Another Resume
-                </button>
-              </div>
-              
-              {loading && (
-                <div className="text-center py-12">
-                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
-                  <p className="text-gray-600">Analyzing {file?.name}...</p>
-                </div>
-              )}
-
-              {analysis && (
-                <div className="space-y-6">
-                  {/* Overall Score */}
-                  <div className={`p-6 rounded-lg ${getScoreBg(analysis.overall_score)}`}>
-                    <div className="flex items-center justify-between mb-2">
-                      <h3 className="text-lg font-semibold text-gray-900">Overall Score</h3>
-                      <div className="text-right">
-                        <span className={`text-3xl font-bold ${getScoreColor(analysis.overall_score)}`}>
-                          {analysis.overall_score}/100
-                        </span>
-                        <div className={`text-lg font-bold ${getScoreColor(analysis.overall_score)} mt-1`}>
-                          Grade: {getLetterGrade(analysis.overall_score)}
-                        </div>
-                      </div>
-                    </div>
-                    <p className="text-gray-700">{analysis.summary}</p>
+            // Analysis Results Section (replaces upload after analysis)
+            <div className="grid lg:grid-cols-3 gap-8">
+              {/* Main Results */}
+              <div className="lg:col-span-2">
+                <div className="bg-white rounded-xl shadow-lg p-8">
+                  <div className="flex items-center justify-between mb-6">
+                    <h2 className="text-2xl font-bold text-gray-900">AI Analysis Results</h2>
+                    <button
+                      onClick={handleUpgradePrompt}
+                      className="text-blue-600 hover:text-blue-800 text-sm font-medium"
+                    >
+                      Analyze Another Resume
+                    </button>
                   </div>
+                  
+                  {loading && (
+                    <div className="text-center py-12">
+                      <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+                      <p className="text-gray-600">Analyzing {file?.name}...</p>
+                    </div>
+                  )}
 
-                  {/* Detailed Scores */}
-                  {analysis.scores && (
-                    <div className="grid grid-cols-2 gap-4">
-                      {Object.entries(analysis.scores).map(([category, score]) => (
-                        <div key={category} className="bg-gray-50 p-4 rounded-lg">
-                          <div className="flex justify-between items-center mb-2">
-                            <span className="text-sm font-medium text-gray-900 capitalize">
-                              {category.replace('_', ' ')}
+                  {analysis && (
+                    <div className="space-y-6">
+                      {/* Overall Score */}
+                      <div className={`p-6 rounded-lg ${getScoreBg(analysis.overall_score)}`}>
+                        <div className="flex items-center justify-between mb-2">
+                          <h3 className="text-lg font-semibold text-gray-900">Overall Score</h3>
+                          <div className="text-right">
+                            <span className={`text-3xl font-bold ${getScoreColor(analysis.overall_score)}`}>
+                              {analysis.overall_score}/100
                             </span>
-                            <div className="text-right">
-                              <span className={`font-bold ${getScoreColor(score)}`}>
-                                {score}
-                              </span>
-                              <div className={`text-xs ${getScoreColor(score)}`}>
-                                {getLetterGrade(score)}
-                              </div>
+                            <div className={`text-lg font-bold ${getScoreColor(analysis.overall_score)} mt-1`}>
+                              Grade: {getLetterGrade(analysis.overall_score)}
                             </div>
                           </div>
-                          <div className="w-full bg-gray-200 rounded-full h-2">
-                            <div
-                              className={`h-2 rounded-full ${
-                                score >= 80 ? 'bg-green-500' :
-                                score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                              }`}
-                              style={{ width: `${score}%` }}
-                            ></div>
-                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                        <p className="text-gray-700">{analysis.summary}</p>
+                      </div>
 
-                  {/* Strengths */}
-                  {analysis.strengths?.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                        <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                        Strengths
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysis.strengths.map((strength, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-green-500 mr-2">•</span>
-                            <span className="text-gray-700">{strength}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  )}
+                      {/* Detailed Scores */}
+                      {analysis.scores && (
+                        <div className="grid grid-cols-2 gap-4">
+                          {Object.entries(analysis.scores).map(([category, score]) => (
+                            <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                              <div className="flex justify-between items-center mb-2">
+                                <span className="text-sm font-medium text-gray-900 capitalize">
+                                  {category.replace('_', ' ')}
+                                </span>
+                                <div className="text-right">
+                                  <span className={`font-bold ${getScoreColor(score)}`}>
+                                    {score}
+                                  </span>
+                                  <div className={`text-xs ${getScoreColor(score)}`}>
+                                    {getLetterGrade(score)}
+                                  </div>
+                                </div>
+                              </div>
+                              <div className="w-full bg-gray-200 rounded-full h-2">
+                                <div
+                                  className={`h-2 rounded-full ${
+                                    score >= 80 ? 'bg-green-500' :
+                                    score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                                  }`}
+                                  style={{ width: `${score}%` }}
+                                ></div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
 
-                  {/* Improvements */}
-                  {analysis.improvements?.length > 0 && (
-                    <div>
-                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                        <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
-                        Suggested Improvements
-                      </h4>
-                      <ul className="space-y-2">
-                        {analysis.improvements.map((improvement, index) => (
-                          <li key={index} className="flex items-start">
-                            <span className="text-blue-500 mr-2">•</span>
-                            <span className="text-gray-700">{improvement}</span>
-                          </li>
-                        ))}
-                      </ul>
+                      {/* Strengths */}
+                      {analysis.strengths?.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                            <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                            Strengths
+                          </h4>
+                          <ul className="space-y-2">
+                            {analysis.strengths.map((strength, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-green-500 mr-2">•</span>
+                                <span className="text-gray-700">{strength}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Improvements */}
+                      {analysis.improvements?.length > 0 && (
+                        <div>
+                          <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                            <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+                            Suggested Improvements
+                          </h4>
+                          <ul className="space-y-2">
+                            {analysis.improvements.map((improvement, index) => (
+                              <li key={index} className="flex items-start">
+                                <span className="text-blue-500 mr-2">•</span>
+                                <span className="text-gray-700">{improvement}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
-              )}
-            </div>
-          )}
-
-          {/* Features/Info Section */}
-          {!hasAnalyzed && (
-            <div className="bg-white rounded-xl shadow-lg p-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-6">AI Analysis</h2>
-              <div className="text-center py-12">
-                <FileText className="mx-auto h-16 w-16 text-gray-300 mb-4" />
-                <p className="text-gray-500">Upload your resume to see detailed AI analysis</p>
               </div>
-            </div>
-          )}
 
-          {/* Upgrade CTA Section */}
-          {hasAnalyzed && (
-            <div className="space-y-6">
-              {/* Premium Upgrade Button */}
-              <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl shadow-lg p-8 text-white">
-                <div className="flex items-center mb-4">
-                  <Brain className="h-8 w-8 mr-3" />
-                  <div>
-                    <h3 className="text-xl font-bold">Unlock AI-Powered Career Tools</h3>
-                    <p className="text-purple-100 text-sm">Transform your job search with advanced AI</p>
+              {/* Upgrade CTA Sidebar */}
+              <div className="space-y-6">
+                {/* Premium Upgrade Button */}
+                <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl shadow-lg p-6 text-white">
+                  <div className="flex items-center mb-4">
+                    <Brain className="h-6 w-6 mr-2" />
+                    <div>
+                      <h3 className="text-lg font-bold">Unlock AI Tools</h3>
+                      <p className="text-purple-100 text-xs">Transform your job search</p>
+                    </div>
                   </div>
-                </div>
-                
-                <div className="mb-6">
-                  <p className="text-purple-100 mb-4">
-                    Get job-specific resume optimization, company research, interview prep, and automated application tracking. 
-                    Our AI analyzes each job posting and tells you exactly how to improve your chances.
-                  </p>
                   
-                  <div className="grid grid-cols-2 gap-4 text-sm">
-                    <div className="flex items-center">
-                      <Sparkles className="h-4 w-4 mr-2" />
-                      <span>Job Match Analysis</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Zap className="h-4 w-4 mr-2" />
-                      <span>Custom Resume Optimization</span>
-                    </div>
-                    <div className="flex items-center">
-                      <TrendingUp className="h-4 w-4 mr-2" />
-                      <span>Company Research</span>
-                    </div>
-                    <div className="flex items-center">
-                      <Award className="h-4 w-4 mr-2" />
-                      <span>Application Tracking</span>
+                  <div className="mb-4">
+                    <p className="text-purple-100 mb-3 text-sm">
+                      Get job-specific optimization, company research, and automated tracking.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 gap-2 text-xs">
+                      <div className="flex items-center">
+                        <Sparkles className="h-3 w-3 mr-2" />
+                        <span>Job Match Analysis</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Zap className="h-3 w-3 mr-2" />
+                        <span>Custom Optimization</span>
+                      </div>
+                      <div className="flex items-center">
+                        <TrendingUp className="h-3 w-3 mr-2" />
+                        <span>Company Research</span>
+                      </div>
+                      <div className="flex items-center">
+                        <Award className="h-3 w-3 mr-2" />
+                        <span>Application Tracking</span>
+                      </div>
                     </div>
                   </div>
+                  
+                  <button 
+                    onClick={handleSignUp}
+                    className="w-full bg-white text-purple-700 py-2 px-4 rounded-lg font-bold hover:bg-gray-100 flex items-center justify-center group transition-all duration-200 text-sm"
+                  >
+                    <Sparkles className="h-4 w-4 mr-1 group-hover:rotate-12 transition-transform" />
+                    Unlock Features
+                    <ArrowRight className="h-4 w-4 ml-1 group-hover:translate-x-1 transition-transform" />
+                  </button>
+                  
+                  <p className="text-center text-purple-200 text-xs mt-2">
+                    Free account • No credit card
+                  </p>
                 </div>
-                
-                <button 
-                  onClick={handleSignUp}
-                  className="w-full bg-white text-purple-700 py-3 px-6 rounded-lg font-bold hover:bg-gray-100 flex items-center justify-center group transition-all duration-200"
-                >
-                  <Sparkles className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" />
-                  Unlock Advanced AI Features
-                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
-                </button>
-                
-                <p className="text-center text-purple-200 text-xs mt-3">
-                  Free account • No credit card required • Cancel anytime
-                </p>
-              </div>
 
-              {/* Standard CTA */}
-              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-lg text-white">
-                <h4 className="font-bold text-lg mb-2">Want More Advanced Features?</h4>
-                <p className="mb-4 opacity-90">
-                  Get job-specific resume optimization, company research, and application tracking
-                </p>
-                <button 
-                  onClick={handleSignUp}
-                  className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100"
-                >
-                  Sign Up Free
-                </button>
+                {/* Standard CTA */}
+                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-4 rounded-lg text-white">
+                  <h4 className="font-bold text-base mb-2">Want More Features?</h4>
+                  <p className="mb-3 opacity-90 text-sm">
+                    Job-specific optimization and application tracking
+                  </p>
+                  <button 
+                    onClick={handleSignUp}
+                    className="bg-white text-blue-600 px-4 py-2 rounded-lg font-semibold hover:bg-gray-100 text-sm w-full"
+                  >
+                    Sign Up Free
+                  </button>
+                </div>
               </div>
             </div>
           )}
