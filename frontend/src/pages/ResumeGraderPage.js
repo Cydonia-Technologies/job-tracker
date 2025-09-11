@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Upload, FileText, Zap, CheckCircle, AlertCircle, Star, TrendingUp, Users, Award } from 'lucide-react';
+import { Upload, FileText, Zap, CheckCircle, AlertCircle, Star, TrendingUp, Users, Award, Sparkles, Brain, ArrowRight } from 'lucide-react';
 
 const ResumeGraderPage = () => {
   const [file, setFile] = useState(null);
@@ -8,6 +8,7 @@ const ResumeGraderPage = () => {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
   const [dragActive, setDragActive] = useState(false);
+  const [hasAnalyzed, setHasAnalyzed] = useState(false);
   const navigate = useNavigate();
 
   const handleDrag = (e) => {
@@ -25,6 +26,11 @@ const ResumeGraderPage = () => {
     e.stopPropagation();
     setDragActive(false);
     
+    if (hasAnalyzed) {
+      handleUpgradePrompt();
+      return;
+    }
+    
     if (e.dataTransfer.files && e.dataTransfer.files[0]) {
       const droppedFile = e.dataTransfer.files[0];
       if (droppedFile.type === 'application/pdf') {
@@ -37,6 +43,11 @@ const ResumeGraderPage = () => {
   };
 
   const handleFileChange = (e) => {
+    if (hasAnalyzed) {
+      handleUpgradePrompt();
+      return;
+    }
+    
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
       if (selectedFile.type === 'application/pdf') {
@@ -70,11 +81,17 @@ const ResumeGraderPage = () => {
 
       const result = await response.json();
       setAnalysis(result);
+      setHasAnalyzed(true);
     } catch (err) {
       setError(err.message || 'Failed to analyze resume. Please try again.');
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleUpgradePrompt = () => {
+    alert('Please log in to analyze additional resumes and unlock advanced features like job-specific optimization!');
+    navigate('/register');
   };
 
   const getScoreColor = (score) => {
@@ -87,6 +104,21 @@ const ResumeGraderPage = () => {
     if (score >= 80) return 'bg-green-100';
     if (score >= 60) return 'bg-yellow-100';
     return 'bg-red-100';
+  };
+
+  const getLetterGrade = (score) => {
+    if (score >= 97) return 'A+';
+    if (score >= 93) return 'A';
+    if (score >= 90) return 'A-';
+    if (score >= 87) return 'B+';
+    if (score >= 83) return 'B';
+    if (score >= 80) return 'B-';
+    if (score >= 77) return 'C+';
+    if (score >= 73) return 'C';
+    if (score >= 70) return 'C-';
+    if (score >= 67) return 'D+';
+    if (score >= 65) return 'D';
+    return 'F';
   };
 
   const handleSignUp = () => {
@@ -156,198 +188,277 @@ const ResumeGraderPage = () => {
 
         {/* Main Content */}
         <div className="grid lg:grid-cols-2 gap-12 items-start">
-          {/* Upload Section */}
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload Your Resume</h2>
-            
-            {!file ? (
-              <div
-                className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
-                  dragActive 
-                    ? 'border-blue-500 bg-blue-50' 
-                    : 'border-gray-300 hover:border-gray-400'
-                }`}
-                onDragEnter={handleDrag}
-                onDragLeave={handleDrag}
-                onDragOver={handleDrag}
-                onDrop={handleDrop}
-              >
-                <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
-                <p className="text-lg text-gray-600 mb-2">
-                  Drag & drop your resume here
-                </p>
-                <p className="text-sm text-gray-500 mb-4">or</p>
-                <label className="cursor-pointer">
-                  <span className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-block">
-                    Choose File
-                  </span>
-                  <input
-                    type="file"
-                    className="hidden"
-                    accept=".pdf"
-                    onChange={handleFileChange}
-                  />
-                </label>
-                <p className="text-xs text-gray-500 mt-4">PDF files only, max 5MB</p>
-              </div>
-            ) : (
-              <div className="bg-gray-50 rounded-lg p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center">
-                    <FileText className="h-8 w-8 text-blue-600 mr-3" />
-                    <div>
-                      <p className="font-medium text-gray-900">{file.name}</p>
-                      <p className="text-sm text-gray-500">
-                        {(file.size / 1024 / 1024).toFixed(2)} MB
-                      </p>
+          {/* Upload/Results Section */}
+          {!hasAnalyzed ? (
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">Upload Your Resume</h2>
+              
+              {!file ? (
+                <div
+                  className={`border-2 border-dashed rounded-lg p-8 text-center transition-colors ${
+                    dragActive 
+                      ? 'border-blue-500 bg-blue-50' 
+                      : 'border-gray-300 hover:border-gray-400'
+                  }`}
+                  onDragEnter={handleDrag}
+                  onDragLeave={handleDrag}
+                  onDragOver={handleDrag}
+                  onDrop={handleDrop}
+                >
+                  <Upload className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+                  <p className="text-lg text-gray-600 mb-2">
+                    Drag & drop your resume here
+                  </p>
+                  <p className="text-sm text-gray-500 mb-4">or</p>
+                  <label className="cursor-pointer">
+                    <span className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 inline-block">
+                      Choose File
+                    </span>
+                    <input
+                      type="file"
+                      className="hidden"
+                      accept=".pdf"
+                      onChange={handleFileChange}
+                    />
+                  </label>
+                  <p className="text-xs text-gray-500 mt-4">PDF files only, max 5MB</p>
+                </div>
+              ) : (
+                <div className="bg-gray-50 rounded-lg p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center">
+                      <FileText className="h-8 w-8 text-blue-600 mr-3" />
+                      <div>
+                        <p className="font-medium text-gray-900">{file.name}</p>
+                        <p className="text-sm text-gray-500">
+                          {(file.size / 1024 / 1024).toFixed(2)} MB
+                        </p>
+                      </div>
                     </div>
+                    <button
+                      onClick={() => setFile(null)}
+                      className="text-gray-400 hover:text-gray-600"
+                    >
+                      ×
+                    </button>
                   </div>
+                  
                   <button
-                    onClick={() => setFile(null)}
-                    className="text-gray-400 hover:text-gray-600"
+                    onClick={analyzeResume}
+                    disabled={loading}
+                    className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
                   >
-                    ×
+                    {loading ? (
+                      <>
+                        <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
+                        Analyzing Resume...
+                      </>
+                    ) : (
+                      <>
+                        <Zap className="h-4 w-4 mr-2" />
+                        Analyze Resume
+                      </>
+                    )}
                   </button>
                 </div>
-                
+              )}
+
+              {error && (
+                <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
+                  <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
+                  <span className="text-red-700">{error}</span>
+                </div>
+              )}
+            </div>
+          ) : (
+            // Analysis Results Section (replaces upload)
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-bold text-gray-900">AI Analysis Results</h2>
                 <button
-                  onClick={analyzeResume}
-                  disabled={loading}
-                  className="w-full bg-blue-600 text-white py-3 rounded-lg hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+                  onClick={handleUpgradePrompt}
+                  className="text-blue-600 hover:text-blue-800 text-sm font-medium"
                 >
-                  {loading ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-2 border-white border-t-transparent mr-2"></div>
-                      Analyzing Resume...
-                    </>
-                  ) : (
-                    <>
-                      <Zap className="h-4 w-4 mr-2" />
-                      Analyze Resume
-                    </>
-                  )}
+                  Analyze Another Resume
                 </button>
               </div>
-            )}
+              
+              {loading && (
+                <div className="text-center py-12">
+                  <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
+                  <p className="text-gray-600">Analyzing {file?.name}...</p>
+                </div>
+              )}
 
-            {error && (
-              <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg flex items-center">
-                <AlertCircle className="h-5 w-5 text-red-500 mr-2" />
-                <span className="text-red-700">{error}</span>
-              </div>
-            )}
-          </div>
+              {analysis && (
+                <div className="space-y-6">
+                  {/* Overall Score */}
+                  <div className={`p-6 rounded-lg ${getScoreBg(analysis.overall_score)}`}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h3 className="text-lg font-semibold text-gray-900">Overall Score</h3>
+                      <div className="text-right">
+                        <span className={`text-3xl font-bold ${getScoreColor(analysis.overall_score)}`}>
+                          {analysis.overall_score}/100
+                        </span>
+                        <div className={`text-lg font-bold ${getScoreColor(analysis.overall_score)} mt-1`}>
+                          Grade: {getLetterGrade(analysis.overall_score)}
+                        </div>
+                      </div>
+                    </div>
+                    <p className="text-gray-700">{analysis.summary}</p>
+                  </div>
 
-          {/* Results Section */}
-          <div className="bg-white rounded-xl shadow-lg p-8">
-            <h2 className="text-2xl font-bold text-gray-900 mb-6">AI Analysis</h2>
-            
-            {!analysis && !loading && (
+                  {/* Detailed Scores */}
+                  {analysis.scores && (
+                    <div className="grid grid-cols-2 gap-4">
+                      {Object.entries(analysis.scores).map(([category, score]) => (
+                        <div key={category} className="bg-gray-50 p-4 rounded-lg">
+                          <div className="flex justify-between items-center mb-2">
+                            <span className="text-sm font-medium text-gray-900 capitalize">
+                              {category.replace('_', ' ')}
+                            </span>
+                            <div className="text-right">
+                              <span className={`font-bold ${getScoreColor(score)}`}>
+                                {score}
+                              </span>
+                              <div className={`text-xs ${getScoreColor(score)}`}>
+                                {getLetterGrade(score)}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="w-full bg-gray-200 rounded-full h-2">
+                            <div
+                              className={`h-2 rounded-full ${
+                                score >= 80 ? 'bg-green-500' :
+                                score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
+                              }`}
+                              style={{ width: `${score}%` }}
+                            ></div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* Strengths */}
+                  {analysis.strengths?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
+                        Strengths
+                      </h4>
+                      <ul className="space-y-2">
+                        {analysis.strengths.map((strength, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-green-500 mr-2">•</span>
+                            <span className="text-gray-700">{strength}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
+                  {/* Improvements */}
+                  {analysis.improvements?.length > 0 && (
+                    <div>
+                      <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
+                        <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
+                        Suggested Improvements
+                      </h4>
+                      <ul className="space-y-2">
+                        {analysis.improvements.map((improvement, index) => (
+                          <li key={index} className="flex items-start">
+                            <span className="text-blue-500 mr-2">•</span>
+                            <span className="text-gray-700">{improvement}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Features/Info Section */}
+          {!hasAnalyzed && (
+            <div className="bg-white rounded-xl shadow-lg p-8">
+              <h2 className="text-2xl font-bold text-gray-900 mb-6">AI Analysis</h2>
               <div className="text-center py-12">
                 <FileText className="mx-auto h-16 w-16 text-gray-300 mb-4" />
                 <p className="text-gray-500">Upload your resume to see detailed AI analysis</p>
               </div>
-            )}
+            </div>
+          )}
 
-            {loading && (
-              <div className="text-center py-12">
-                <div className="animate-spin rounded-full h-16 w-16 border-4 border-blue-200 border-t-blue-600 mx-auto mb-4"></div>
-                <p className="text-gray-600">Analyzing your resume...</p>
-              </div>
-            )}
-
-            {analysis && (
-              <div className="space-y-6">
-                {/* Overall Score */}
-                <div className={`p-6 rounded-lg ${getScoreBg(analysis.overall_score)}`}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-lg font-semibold text-gray-900">Overall Score</h3>
-                    <span className={`text-3xl font-bold ${getScoreColor(analysis.overall_score)}`}>
-                      {analysis.overall_score}/100
-                    </span>
+          {/* Upgrade CTA Section */}
+          {hasAnalyzed && (
+            <div className="space-y-6">
+              {/* Premium Upgrade Button */}
+              <div className="bg-gradient-to-r from-purple-600 to-indigo-700 rounded-xl shadow-lg p-8 text-white">
+                <div className="flex items-center mb-4">
+                  <Brain className="h-8 w-8 mr-3" />
+                  <div>
+                    <h3 className="text-xl font-bold">Unlock AI-Powered Career Tools</h3>
+                    <p className="text-purple-100 text-sm">Transform your job search with advanced AI</p>
                   </div>
-                  <p className="text-gray-700">{analysis.summary}</p>
                 </div>
-
-                {/* Detailed Scores */}
-                {analysis.scores && (
-                  <div className="grid grid-cols-2 gap-4">
-                    {Object.entries(analysis.scores).map(([category, score]) => (
-                      <div key={category} className="bg-gray-50 p-4 rounded-lg">
-                        <div className="flex justify-between items-center mb-2">
-                          <span className="text-sm font-medium text-gray-900 capitalize">
-                            {category.replace('_', ' ')}
-                          </span>
-                          <span className={`font-bold ${getScoreColor(score)}`}>
-                            {score}
-                          </span>
-                        </div>
-                        <div className="w-full bg-gray-200 rounded-full h-2">
-                          <div
-                            className={`h-2 rounded-full ${
-                              score >= 80 ? 'bg-green-500' :
-                              score >= 60 ? 'bg-yellow-500' : 'bg-red-500'
-                            }`}
-                            style={{ width: `${score}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-
-                {/* Strengths */}
-                {analysis.strengths?.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <CheckCircle className="h-5 w-5 text-green-500 mr-2" />
-                      Strengths
-                    </h4>
-                    <ul className="space-y-2">
-                      {analysis.strengths.map((strength, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-green-500 mr-2">•</span>
-                          <span className="text-gray-700">{strength}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* Improvements */}
-                {analysis.improvements?.length > 0 && (
-                  <div>
-                    <h4 className="font-semibold text-gray-900 mb-3 flex items-center">
-                      <TrendingUp className="h-5 w-5 text-blue-500 mr-2" />
-                      Suggested Improvements
-                    </h4>
-                    <ul className="space-y-2">
-                      {analysis.improvements.map((improvement, index) => (
-                        <li key={index} className="flex items-start">
-                          <span className="text-blue-500 mr-2">•</span>
-                          <span className="text-gray-700">{improvement}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {/* CTA */}
-                <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-lg text-white">
-                  <h4 className="font-bold text-lg mb-2">Want More Advanced Features?</h4>
-                  <p className="mb-4 opacity-90">
-                    Get job-specific resume optimization, company research, and application tracking
+                
+                <div className="mb-6">
+                  <p className="text-purple-100 mb-4">
+                    Get job-specific resume optimization, company research, interview prep, and automated application tracking. 
+                    Our AI analyzes each job posting and tells you exactly how to improve your chances.
                   </p>
-                  <button 
-                    onClick={handleSignUp}
-                    className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100"
-                  >
-                    Sign Up Free
-                  </button>
+                  
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="flex items-center">
+                      <Sparkles className="h-4 w-4 mr-2" />
+                      <span>Job Match Analysis</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Zap className="h-4 w-4 mr-2" />
+                      <span>Custom Resume Optimization</span>
+                    </div>
+                    <div className="flex items-center">
+                      <TrendingUp className="h-4 w-4 mr-2" />
+                      <span>Company Research</span>
+                    </div>
+                    <div className="flex items-center">
+                      <Award className="h-4 w-4 mr-2" />
+                      <span>Application Tracking</span>
+                    </div>
+                  </div>
                 </div>
+                
+                <button 
+                  onClick={handleSignUp}
+                  className="w-full bg-white text-purple-700 py-3 px-6 rounded-lg font-bold hover:bg-gray-100 flex items-center justify-center group transition-all duration-200"
+                >
+                  <Sparkles className="h-5 w-5 mr-2 group-hover:rotate-12 transition-transform" />
+                  Unlock Advanced AI Features
+                  <ArrowRight className="h-5 w-5 ml-2 group-hover:translate-x-1 transition-transform" />
+                </button>
+                
+                <p className="text-center text-purple-200 text-xs mt-3">
+                  Free account • No credit card required • Cancel anytime
+                </p>
               </div>
-            )}
-          </div>
+
+              {/* Standard CTA */}
+              <div className="bg-gradient-to-r from-blue-600 to-purple-600 p-6 rounded-lg text-white">
+                <h4 className="font-bold text-lg mb-2">Want More Advanced Features?</h4>
+                <p className="mb-4 opacity-90">
+                  Get job-specific resume optimization, company research, and application tracking
+                </p>
+                <button 
+                  onClick={handleSignUp}
+                  className="bg-white text-blue-600 px-6 py-2 rounded-lg font-semibold hover:bg-gray-100"
+                >
+                  Sign Up Free
+                </button>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Features Section */}
