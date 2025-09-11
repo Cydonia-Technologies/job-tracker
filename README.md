@@ -10,7 +10,7 @@ AI-powered job application tracking system that automates resume grading, job ma
 - **Backend API**: https://jobtracker-api-b08390fc29d1.herokuapp.com
 - **Health Check**: https://jobtracker-api-b08390fc29d1.herokuapp.com/health
 
-## ✅ Current Status (Week 1 Sprint)
+## ✅ Current Status (Week 1-2 Sprint)
 
 ### **COMPLETED ✅**
 - [x] **Backend Infrastructure**: Complete Node.js/Express API with Supabase
@@ -18,14 +18,15 @@ AI-powered job application tracking system that automates resume grading, job ma
 - [x] **Chrome Extension**: Working Indeed job extraction with overlay UI
 - [x] **Database Schema**: PostgreSQL with Row Level Security, user profiles, job tracking
 - [x] **AI Integration**: Google Gemini API connected with resume grading feature
+- [x] **AI Resume Parsing**: Extract structured data (skills, experience, education) from PDFs
 - [x] **Production Deployment**: Backend deployed to Heroku, Frontend deployed to Vercel
 - [x] **Testing Framework**: Comprehensive test scripts for local and production environments
 
 ### **IN PROGRESS 🚧**
+- [ ] **AI Job Matching**: Score job compatibility based on parsed resume data
 - [ ] **Resume Grader Frontend**: Public landing page with file upload and AI analysis
-- [ ] **Manual Testing**: Verify resume grader AI feature works end-to-end
-- [ ] **Job Match Scoring**: Implement authenticated AI job compatibility analysis
 - [ ] **Extension Production Integration**: Point Chrome extension to production API
+- [ ] **Job Dashboard**: View job matches with freemium limits (3 detailed + unlimited blurred)
 
 ### **NEXT SPRINT 📋**
 - [ ] **Resume Optimization**: AI-powered job-specific resume improvement suggestions
@@ -48,12 +49,15 @@ AI-powered job application tracking system that automates resume grading, job ma
                     │  - PostgreSQL Database  │
                     │  - Real-time Engine     │
                     │  - Authentication       │
+                    │  - File Storage         │
                     └─────────────────────────┘
                                  │
                                  ▼
                     ┌─────────────────────────┐
                     │   Google Gemini AI      │
-                    │   (Resume Analysis)     │
+                    │  - Resume Analysis      │
+                    │  - Structured Parsing   │
+                    │  - Job Matching         │
                     └─────────────────────────┘
 ```
 
@@ -65,6 +69,7 @@ AI-powered job application tracking system that automates resume grading, job ma
 - **Authentication**: Supabase Auth (JWT tokens)
 - **AI Service**: Google Gemini 1.5 Flash ($0.000075/1K tokens)
 - **File Processing**: PDF parsing with pdf-parse
+- **Resume Parsing**: AI-powered structured data extraction with regex fallback
 - **Rate Limiting**: 100 requests per 15 minutes per IP
 
 ### **Frontend (Vercel)**
@@ -79,6 +84,12 @@ AI-powered job application tracking system that automates resume grading, job ma
 - **Target Sites**: Indeed.com, LinkedIn.com, Nittany Careers
 - **Features**: Job extraction, one-click save, background sync
 - **Communication**: Message passing between content and background scripts
+
+### **AI Features**
+- **Resume Grading**: Letter grades (A+, A, B+, etc.) with detailed feedback
+- **Resume Parsing**: Extract skills, experience, education, contact info
+- **Fallback System**: Regex-based parsing if AI fails
+- **Cost Optimization**: ~$0.001 per resume analysis
 
 ## 🚀 Quick Start
 
@@ -108,6 +119,9 @@ npm start
 # Test live deployment
 ./scripts/test-all.sh production
 
+# Test resume parsing specifically
+./scripts/test-resume-parsing.sh
+
 # Or test individual components
 curl https://jobtracker-api-b08390fc29d1.herokuapp.com/health
 curl https://job-tracker-weld-three.vercel.app
@@ -120,7 +134,13 @@ job-tracker/
 ├── backend/                 # Node.js API server
 │   ├── src/
 │   │   ├── routes/         # API endpoints
+│   │   │   ├── auth.js     # Authentication routes
+│   │   │   ├── users.js    # User profile & enhanced resume upload
+│   │   │   ├── jobs.js     # Job management
+│   │   │   ├── applications.js # Application tracking
+│   │   │   └── ai.js       # AI analysis endpoints
 │   │   ├── services/       # AI and business logic
+│   │   │   └── aiService.js # Gemini integration + resume parsing
 │   │   ├── middleware/     # Auth, validation, rate limiting
 │   │   ├── config/         # Database and external service config
 │   │   └── prompts/        # AI prompt templates
@@ -142,6 +162,7 @@ job-tracker/
 ├── scripts/              # Testing and automation scripts
 │   ├── test-local.sh     # Local development testing
 │   ├── test-production.sh # Production deployment testing
+│   ├── test-resume-parsing.sh # Resume parsing tests
 │   └── test-all.sh       # Master test runner
 ├── docs/                 # Technical documentation
 │   ├── DEPLOYMENT.md     # Deployment guides
@@ -182,12 +203,16 @@ REACT_APP_ENVIRONMENT=production
 # Test specific environment
 ./scripts/test-all.sh local        # Local development
 ./scripts/test-all.sh production   # Production deployment
+
+# Test resume parsing specifically
+./scripts/test-resume-parsing.sh
 ```
 
 ### **Manual Testing Checklist**
 - [ ] Backend health endpoint responds
-- [ ] Resume grader accepts PDF uploads
-- [ ] AI analysis returns structured results
+- [ ] Resume upload accepts PDF files
+- [ ] AI resume parsing extracts structured data (skills, experience, education)
+- [ ] Resume grader returns letter grades with feedback
 - [ ] User registration and authentication works
 - [ ] Job creation and management functional
 - [ ] Chrome extension extracts job data
@@ -202,12 +227,13 @@ REACT_APP_ENVIRONMENT=production
 
 ### **Core Value Proposition**
 - **Automated Workflow**: Reduce 1-2 hours daily to 10-15 minutes
-- **AI-Powered Insights**: Resume grading, job matching, company research
+- **AI-Powered Insights**: Resume grading, parsing, job matching, company research
 - **Browser Integration**: Seamless job extraction from major job boards
 - **Student-Focused**: Affordable pricing with university-specific features
 
 ### **Differentiation from OfferPilotAI**
 - ✅ **80% cost savings** with superior technical execution
+- ✅ **AI resume parsing** with structured data extraction
 - ✅ **Free resume grader** as lead magnet for user acquisition
 - ✅ **Better Chrome extension** with more job site support
 - ✅ **Transparent AI** algorithms and pricing
@@ -218,7 +244,8 @@ REACT_APP_ENVIRONMENT=production
 ### **Technical Performance**
 - **Backend Response Time**: < 500ms average
 - **Frontend Load Time**: < 2s on 3G
-- **AI Analysis Time**: < 10s for resume grading
+- **AI Analysis Time**: < 10s for resume grading/parsing
+- **Resume Parsing Accuracy**: 80%+ for skills and experience extraction
 - **Uptime**: 99.9% target (Heroku + Vercel)
 
 ### **AI Usage & Costs**
@@ -226,14 +253,16 @@ REACT_APP_ENVIRONMENT=production
 - **Input Cost**: $0.000075 per 1K tokens
 - **Output Cost**: $0.0003 per 1K tokens
 - **Average Resume Analysis**: ~$0.01 per request
+- **Average Resume Parsing**: ~$0.001 per request
 
 ## 🚧 Known Issues & Limitations
 
 1. **Resume Grader Frontend**: Not yet implemented (in progress)
 2. **Chrome Extension**: Points to local API (needs production update)
 3. **Job Sites**: Limited to Indeed and Nittany Careers for MVP
-4. **Mobile App**: Not planned for initial release
-5. **Bulk Import**: No ATS integration yet
+4. **Resume Parsing**: Works best with standard resume formats
+5. **Mobile App**: Not planned for initial release
+6. **Bulk Import**: No ATS integration yet
 
 ## 🤝 Contributing
 
@@ -248,7 +277,7 @@ REACT_APP_ENVIRONMENT=production
 - **Backend**: ES6+ with async/await, JSDoc comments
 - **Frontend**: Functional React components with hooks
 - **Database**: Row Level Security, proper indexing
-- **AI**: Modular prompts, cost tracking, error handling
+- **AI**: Modular prompts, cost tracking, error handling, fallback systems
 
 ## 📞 Support & Documentation
 
@@ -259,11 +288,11 @@ REACT_APP_ENVIRONMENT=production
 
 ## 📈 Roadmap
 
-### **Phase 1: MVP Launch (Week 2)**
-- Complete resume grader frontend
+### **Phase 1: PoC Completion (Week 2-3)**
+- Complete AI job matching with parsed resume data
+- Resume grader frontend implementation
 - Chrome extension production integration
-- User acquisition landing page
-- Penn State career fair materials
+- Job dashboard with freemium model
 
 ### **Phase 2: Feature Expansion (Month 2)**
 - Resume optimization for specific jobs
@@ -279,7 +308,7 @@ REACT_APP_ENVIRONMENT=production
 
 ---
 
-**Last Updated**: September 2025
-**Version**: 1.0.0 (Production)
+**Last Updated**: January 2025
+**Version**: 1.1.0 (Resume Parsing Added)
 **Deployment**: Heroku + Vercel
-**Status**: ✅ Live and Ready for Users
+**Status**: ✅ Live with AI Resume Parsing Ready for Job Matching

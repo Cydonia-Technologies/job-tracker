@@ -1,6 +1,6 @@
 # JobTracker Backend API
 
-AI-powered job application tracking system with resume grading, job matching, and application management.
+AI-powered job application tracking system with resume grading, structured resume parsing, job matching, and application management.
 
 ## 🚀 Quick Start
 
@@ -37,9 +37,9 @@ backend/
 │   │   ├── applications.js      # Job application CRUD
 │   │   ├── auth.js              # Authentication routes
 │   │   ├── jobs.js              # Job posting CRUD
-│   │   └── users.js             # User profile management
+│   │   └── users.js             # User profile & resume management
 │   ├── services/
-│   │   └── aiService.js         # Google Gemini AI integration
+│   │   └── aiService.js         # Google Gemini AI integration + resume parsing
 │   ├── prompts/
 │   │   ├── resume-grading.txt   # AI prompt templates
 │   │   ├── job-matching.txt
@@ -101,6 +101,7 @@ BCRYPT_ROUNDS=12
 - **Authentication**: Supabase Auth (JWT)
 - **AI Service**: Google Gemini 1.5 Flash
 - **File Processing**: PDF parsing with pdf-parse
+- **Resume Parsing**: AI-powered structured data extraction with regex fallback
 - **Validation**: Joi schema validation
 - **Rate Limiting**: rate-limiter-flexible
 
@@ -162,10 +163,87 @@ BCRYPT_ROUNDS=12
 |--------|----------|-------------|
 | `GET` | `/api/users/profile` | Get user profile |
 | `PUT` | `/api/users/profile` | Update user profile |
-| `POST` | `/api/users/resume` | Upload resume file |
+| `POST` | `/api/users/resume` | **Enhanced**: Upload & parse resume with AI |
+| `GET` | `/api/users/resume/parsed` | **New**: Get parsed resume data |
+| `POST` | `/api/users/resume/reparse` | **New**: Re-parse existing resume |
 | `GET` | `/api/users/activity` | Get user activity log |
 
+## 🧠 AI Resume Parsing Features
+
+### **Enhanced Resume Upload (`POST /api/users/resume`)**
+
+**Input**: PDF file upload
+**Process**:
+1. Extract text from PDF
+2. AI-powered structured data extraction
+3. Fallback regex parsing if AI fails
+4. Store structured data in database
+
+**Response**:
+```json
+{
+  "message": "Resume uploaded and analyzed successfully",
+  "resume_url": "https://supabase.storage.url/resume.pdf",
+  "parsed_data": {
+    "skills": {
+      "technical": ["JavaScript", "React", "Python", "SQL"],
+      "soft": ["Leadership", "Communication", "Problem Solving"],
+      "tools": ["Git", "AWS", "Docker", "Figma"]
+    },
+    "experience": {
+      "total_years": 3,
+      "current_level": "Mid-level",
+      "job_titles": ["Software Developer", "Frontend Engineer"],
+      "companies": ["Tech Corp", "StartupXYZ"]
+    },
+    "education": {
+      "highest_degree": "Bachelor's",
+      "field_of_study": "Computer Science",
+      "school": "Penn State University",
+      "graduation_year": 2022
+    },
+    "contact": {
+      "location": "State College, PA",
+      "has_linkedin": true,
+      "has_github": true,
+      "has_portfolio": false
+    },
+    "summary": "Experienced software developer with 3 years of full-stack development experience..."
+  },
+  "analysis_metadata": {
+    "processing_time_ms": 2500,
+    "model_used": "gemini-1.5-flash",
+    "cost_usd": 0.0009,
+    "total_skills_found": 15,
+    "experience_years": 3
+  }
+}
+```
+
+### **Get Parsed Resume Data (`GET /api/users/resume/parsed`)**
+
+Returns previously parsed resume data without re-processing.
+
+### **Re-parse Resume (`POST /api/users/resume/reparse`)**
+
+Re-analyzes existing resume text with latest AI model/prompts.
+
 ## 🧪 Testing API Endpoints
+
+### Test Resume Upload & Parsing
+```bash
+# Upload and parse resume (requires authentication)
+curl -X POST http://localhost:3001/api/users/resume \
+  -H "Authorization: Bearer YOUR_TOKEN" \
+  -F "resume=@path/to/resume.pdf"
+```
+
+### Test Getting Parsed Data
+```bash
+# Get parsed resume data
+curl -X GET http://localhost:3001/api/users/resume/parsed \
+  -H "Authorization: Bearer YOUR_TOKEN"
+```
 
 ### Test Resume Grader (Public)
 ```bash
@@ -211,7 +289,7 @@ curl -X POST http://localhost:3001/api/jobs \
 
 2. **Configure Supabase**
    - Create project at [supabase.com](https://supabase.com)
-   - Run database migrations (see database schema documentation)
+   - Run database migrations (see database schema section)
    - Get your project URL and API keys
 
 3. **Configure Google Gemini**
@@ -242,10 +320,30 @@ curl -X POST http://localhost:3001/api/jobs \
 The application uses Supabase (PostgreSQL) with Row Level Security. Key tables:
 
 - `users` - User accounts (handled by Supabase Auth)
-- `user_profiles` - User profile data and preferences
+- `user_profiles` - **Enhanced**: User profile data with parsed resume fields
 - `jobs` - Job postings saved by users
 - `applications` - Job applications with status tracking
 - `ai_analysis` - AI analysis results and usage tracking
+
+### **Enhanced user_profiles Table Schema**
+```sql
+-- Add these columns for resume parsing
+ALTER TABLE user_profiles
+ADD COLUMN IF NOT EXISTS resume_text TEXT,
+ADD COLUMN IF NOT EXISTS parsed_skills JSONB,
+ADD COLUMN IF NOT EXISTS parsed_experience JSONB,
+ADD COLUMN IF NOT EXISTS parsed_education JSONB,
+ADD COLUMN IF NOT EXISTS parsed_contact JSONB,
+ADD COLUMN IF NOT EXISTS resume_summary TEXT,
+ADD COLUMN IF NOT EXISTS parsing_metadata JSONB;
+
+-- Add indexes for efficient job matching queries
+CREATE INDEX IF NOT EXISTS idx_user_profiles_skills
+ON user_profiles USING GIN (parsed_skills);
+
+CREATE INDEX IF NOT EXISTS idx_user_profiles_experience
+ON user_profiles USING GIN (parsed_experience);
+```
 
 ### Required Database Views
 ```sql
@@ -258,6 +356,47 @@ SELECT
   a.id as application_id
 FROM jobs j
 LEFT JOIN applications a ON j.id = a.job_id;
+```
+
+### **Parsed Data Structure Examples**
+
+**Skills JSON Structure**:
+```json
+{
+  "technical": ["JavaScript", "React", "Python", "SQL"],
+  "soft": ["Leadership", "Communication", "Problem Solving"],
+  "tools": ["Git", "AWS", "Docker", "Figma"]
+}
+```
+
+**Experience JSON Structure**:
+```json
+{
+  "total_years": 3,
+  "current_level": "Mid-level",
+  "job_titles": ["Software Developer", "Frontend Engineer"],
+  "companies": ["Tech Corp", "StartupXYZ"]
+}
+```
+
+**Education JSON Structure**:
+```json
+{
+  "highest_degree": "Bachelor's",
+  "field_of_study": "Computer Science",
+  "school": "Penn State University",
+  "graduation_year": 2022
+}
+```
+
+**Contact JSON Structure**:
+```json
+{
+  "location": "State College, PA",
+  "has_linkedin": true,
+  "has_github": true,
+  "has_portfolio": false
+}
 ```
 
 ## 📦 Production Deployment (Heroku)
@@ -292,7 +431,7 @@ LEFT JOIN applications a ON j.id = a.job_id;
 4. **Deploy**
    ```bash
    git add .
-   git commit -m "Deploy to Heroku"
+   git commit -m "Deploy enhanced resume parsing to Heroku"
    git push heroku main
    ```
 
@@ -303,8 +442,8 @@ LEFT JOIN applications a ON j.id = a.job_id;
    ```
 
 ### Production URLs
-- **API**: `https://jobtracker-api.herokuapp.com`
-- **Health Check**: `https://jobtracker-api.herokuapp.com/health`
+- **API**: `https://jobtracker-api-b08390fc29d1.herokuapp.com`
+- **Health Check**: `https://jobtracker-api-b08390fc29d1.herokuapp.com/health`
 
 ## 🛠️ Development Workflow
 
@@ -337,6 +476,24 @@ LEFT JOIN applications a ON j.id = a.job_id;
 3. **Add route** in `src/routes/ai.js`
 4. **Test with sample data**
 
+### **Resume Parsing Development**
+
+1. **Test AI parsing function**:
+   ```javascript
+   // Test in Node.js REPL
+   const { parseResumeData } = require('./src/services/aiService');
+   const result = await parseResumeData(resumeText);
+   console.log(result.parsed_data);
+   ```
+
+2. **Test fallback regex parsing**:
+   ```javascript
+   // Disable AI to test regex fallback
+   process.env.GEMINI_API_KEY = 'invalid';
+   const result = await parseResumeData(resumeText);
+   // Should still return structured data
+   ```
+
 ## 🐛 Troubleshooting
 
 ### Common Issues
@@ -361,30 +518,34 @@ console.log('Connected:', !!supabase);
 echo $GEMINI_API_KEY
 
 # Verify quota and billing in Google Cloud Console
+# Test with simple request
+curl -X POST "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=$GEMINI_API_KEY" \
+  -H 'Content-Type: application/json' \
+  -d '{"contents":[{"parts":[{"text":"Hello"}]}]}'
 ```
 
-#### "CORS errors"
-```javascript
-// Update CORS configuration in src/server.js
-app.use(cors({
-  origin: [
-    process.env.FRONTEND_URL,
-    'http://localhost:3000',
-    `chrome-extension://${process.env.EXTENSION_ID}`
-  ],
-  credentials: true
-}));
+#### "Resume parsing fails"
+```bash
+# Check if parseResumeData function is exported
+node -e "
+const { parseResumeData } = require('./src/services/aiService');
+console.log('Function available:', typeof parseResumeData);
+"
+
+# Test with sample text
+node -e "
+const { parseResumeData } = require('./src/services/aiService');
+parseResumeData('John Smith Software Developer JavaScript React').then(console.log);
+"
 ```
 
-#### "Rate limiting too aggressive"
-```javascript
-// Adjust in src/middleware/rateLimiter.js
-const rateLimiters = {
-  general: new RateLimiterMemory({
-    points: 200, // Increase from 100
-    duration: 900
-  })
-};
+#### "Database schema errors"
+```sql
+-- Check if new columns exist
+SELECT column_name, data_type
+FROM information_schema.columns
+WHERE table_name = 'user_profiles'
+AND column_name IN ('parsed_skills', 'parsed_experience', 'parsed_education');
 ```
 
 ### Debug Commands
@@ -399,14 +560,22 @@ heroku config -a jobtracker-api
 # Run commands in production
 heroku run node -a jobtracker-api
 
-# Local debugging
+# Local debugging with resume parsing
 DEBUG=* npm run dev
+
+# Test resume parsing endpoint specifically
+curl -X POST http://localhost:3001/api/users/resume \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "resume=@test-resume.pdf" \
+  -v
 ```
 
 ## 📊 Monitoring & Analytics
 
 ### Key Metrics to Track
 - API response times
+- **Resume parsing success rate** (AI vs fallback)
+- **Skills extraction accuracy** (manual verification)
 - AI token usage and costs
 - User registration conversion from resume grader
 - Most popular job sites being scraped
@@ -414,14 +583,18 @@ DEBUG=* npm run dev
 
 ### Logging
 ```javascript
-// Structured logging example
+// Enhanced logging for resume parsing
 console.log(JSON.stringify({
   level: 'info',
-  message: 'Resume analyzed',
+  message: 'Resume parsed',
   userId: req.userId,
   fileSize: req.file.size,
-  processingTime: Date.now() - startTime,
-  aiCost: analysis.cost_usd
+  processingTime: metadata.processing_time_ms,
+  aiCost: metadata.cost_usd,
+  skillsFound: parsed_data.skills?.technical?.length || 0,
+  experienceYears: parsed_data.experience?.total_years || 0,
+  parseMethod: metadata.model_used, // 'gemini-1.5-flash' or 'fallback_regex'
+  success: !metadata.error
 }));
 ```
 
@@ -430,31 +603,42 @@ console.log(JSON.stringify({
 - **Authentication**: Using Supabase Auth (JWT tokens)
 - **Authorization**: Row Level Security (RLS) in database
 - **Rate Limiting**: 100 requests per 15 minutes per IP
-- **File Upload**: PDF only, 5MB limit
+- **File Upload**: PDF only, 5MB limit, virus scanning via Supabase
 - **CORS**: Restricted to known origins
+- **Data Privacy**: Resume text encrypted at rest
 - **Environment Variables**: Never commit to git
 
 ## 📈 Performance Optimization
 
 ### AI Cost Management
-- Cache similar resume analyses
-- Use Gemini Flash (cheaper) for most features
+- **Resume Parsing**: ~$0.001 per analysis (very affordable)
+- Cache similar resume analyses (hash-based)
+- Use Gemini Flash (cheaper) for parsing
 - Implement circuit breaker for API failures
 - Monitor token usage per user
+- Fallback to regex parsing if AI quota exceeded
 
 ### Database Optimization
-- Indexes on frequently queried columns
+- **JSONB indexes** for fast skill searches
+- GIN indexes on parsed_skills and parsed_experience
 - Connection pooling via Supabase
 - Paginated responses for large datasets
 
+### Resume Parsing Optimization
+- **Batch processing**: Parse multiple resumes in queue
+- **Caching**: Store parsing results by content hash
+- **Fallback performance**: Regex parsing <100ms
+- **AI performance**: Target <5s for parsing
+
 ## 🎯 Future Enhancements
 
-- [ ] Redis caching for AI responses
-- [ ] Webhook endpoints for real-time updates
-- [ ] Bulk import from job boards
-- [ ] Email notifications for application updates
-- [ ] Integration with ATS systems
-- [ ] Advanced analytics dashboard
+- [ ] **Enhanced resume parsing**: Support for more file formats (DOCX, TXT)
+- [ ] **Skill ontology**: Map similar skills (React.js = ReactJS)
+- [ ] **Experience verification**: Cross-reference with LinkedIn/GitHub
+- [ ] **Resume scoring**: Grade based on industry standards
+- [ ] **Custom parsing**: User-defined skill categories
+- [ ] **Batch upload**: Process multiple resumes
+- [ ] **Resume templates**: Generate optimized resumes from parsed data
 
 ## 📞 Support
 
@@ -463,10 +647,33 @@ For technical issues or questions:
 2. Review application logs: `heroku logs --tail`
 3. Test with curl commands provided above
 4. Check Supabase and Google Cloud Console dashboards
+5. **Resume parsing issues**: Check parsing metadata in response
+
+## 🧪 Testing Resume Parsing
+
+### **Comprehensive Test Script**
+```bash
+# Run the resume parsing test suite
+./scripts/test-resume-parsing.sh
+
+# Manual testing with different resume formats
+curl -X POST http://localhost:3001/api/users/resume \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "resume=@technical-resume.pdf"
+
+curl -X POST http://localhost:3001/api/users/resume \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "resume=@marketing-resume.pdf"
+
+curl -X POST http://localhost:3001/api/users/resume \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "resume=@student-resume.pdf"
+```
 
 ---
 
 **Last Updated**: January 2025
 **Node Version**: 18.x
-**Database**: PostgreSQL via Supabase
+**Database**: PostgreSQL via Supabase with Resume Parsing Schema
 **Deployment**: Heroku Basic Dyno ($7/month)
+**New Features**: ✅ AI-Powered Resume Parsing with Structured Data Extraction

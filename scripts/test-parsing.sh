@@ -13,8 +13,8 @@ NC='\033[0m' # No Color
 
 # Configuration
 API_URL="http://localhost:3001"  # Change to production URL when testing production
-TEST_USER_EMAIL="test@example.com"
-TEST_USER_PASSWORD="testpassword123"
+TEST_USER_EMAIL="karalar.alpefe+test@gmail.com"
+TEST_USER_PASSWORD="password123"
 
 echo -e "${BLUE}===========================================${NC}"
 echo -e "${BLUE}   JobTracker Resume Parsing Tests${NC}"
@@ -115,8 +115,8 @@ echo -e "${GREEN}✅ Authentication successful${NC}"
 
 # Test 3: Check if aiService.js has parseResumeData function
 echo -e "\n${YELLOW}Test 3: Check AI Service Implementation${NC}"
-if [ -f "backend/services/aiService.js" ]; then
-    if grep -q "parseResumeData" "backend/services/aiService.js"; then
+if [ -f "backend/src/services/aiService.js" ]; then
+    if grep -q "parseResumeData" "backend/src/services/aiService.js"; then
         echo -e "${GREEN}✅ parseResumeData function found in aiService.js${NC}"
     else
         echo -e "${RED}❌ parseResumeData function not found in aiService.js${NC}"
