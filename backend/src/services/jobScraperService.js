@@ -1,5 +1,5 @@
 // =====================================================
-// JOB SCRAPER SERVICE - Indeed to Database (FIXED)
+// SIMPLE JOB SCRAPER - Search Results Only
 // =====================================================
 
 const puppeteer = require('puppeteer');
@@ -11,51 +11,6 @@ class JobScraperService {
     this.page = null;
     this.source = 'indeed';
     
-    // Ported from your extension - these selectors work well
-    this.selectors = {
-      // Job title selectors - multiple fallbacks
-      title: [
-        '[data-testid="jobsearch-JobInfoHeader-title"] span',
-        '.jobsearch-JobInfoHeader-title span',
-        'h1 span[title]',
-        'h2[data-testid="jobsearch-JobInfoHeader-title"] span',
-        'h1', 'h2'
-      ],
-      
-      // Company name selectors
-      company: [
-        '[data-testid*="companyName"] a',
-        '[data-testid*="companyName"]',
-        '[id*="company"] a',
-        '[id*="company"]',
-        '.companyName a',
-        '.companyName',
-        'a[href*="/cmp/"]'
-      ],
-      
-      // Location selectors
-      location: [
-        '[data-testid*="location"] span',
-        '[data-testid*="location"]',
-        '[id*="location"]',
-        '.location'
-      ],
-      
-      // Job description
-      description: [
-        '#jobDescriptionText',
-        '.jobsearch-JobComponent-description',
-        '[data-testid*="description"]'
-      ],
-      
-      // Salary selectors
-      salary: [
-        '.jobsearch-JobMetadataHeader-item',
-        '.salary-snippet',
-        '[data-testid*="salary"]'
-      ]
-    };
-
     // Broader searches for better job coverage
     this.searchQueries = [
       'entry level software engineer',
@@ -65,11 +20,7 @@ class JobScraperService {
       'junior software engineer',
       'entry level data analyst',
       'software engineer new grad',
-      'junior web developer',
-      'entry level python developer',
-      'junior react developer',
-      'software engineer intern',
-      'entry level backend developer'
+      'junior web developer'
     ];
   }
 
@@ -78,29 +29,32 @@ class JobScraperService {
     console.log('🚀 Starting Job Scraper...');
     
     this.browser = await puppeteer.launch({
-      headless: false, // Set to true for production
+      headless: false,
       defaultViewport: { width: 1280, height: 720 },
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-blink-features=AutomationControlled'
-      ]
+      args: ['--no-sandbox', '--disable-setuid-sandbox']
     });
 
     this.page = await this.browser.newPage();
-    
-    // Set user agent to avoid detection
-    await this.page.setUserAgent(
-      'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
-    );
-
+    await this.page.setUserAgent('Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36');
     console.log('✅ Browser initialized');
   }
 
-  // Main scraping orchestrator
+  // Main scraping orchestrator  
   async scrapeJobs(maxJobs = 50) {
     if (!this.browser) {
       await this.initialize();
+    }
+
+    // First, test a simple navigation to Indeed homepage
+    console.log('🌐 Testing Indeed access...');
+    try {
+      await this.page.goto('https://www.indeed.com', { waitUntil: 'networkidle2', timeout: 30000 });
+      await this.delay(2000);
+      console.log('✅ Successfully accessed Indeed homepage');
+    } catch (error) {
+      console.error('❌ Failed to access Indeed homepage:', error.message);
+      console.log('This might indicate network issues or Indeed blocking access');
+      return [];
     }
 
     const allJobs = [];
@@ -112,16 +66,34 @@ class JobScraperService {
       console.log(`\n🔍 Searching: "${query}"`);
       
       try {
-        const jobsFromQuery = await this.scrapeSearchQuery(query, maxJobs - jobsCollected);
+        const jobsFromQuery = await this.scrapeSearchResultsPage(query);
+        
+        // Process salary for each job
+        jobsFromQuery.forEach(job => {
+          if (job && job.extracted_data?.raw_salary) {
+            job.salary_min = this.parseSalaryMin(job.extracted_data.raw_salary);
+            job.salary_max = this.parseSalaryMax(job.extracted_data.raw_salary);
+          }
+        });
+        
         allJobs.push(...jobsFromQuery);
         jobsCollected = allJobs.length;
         
-        console.log(`✅ Collected ${jobsFromQuery.length} jobs from this search`);
+        console.log(`✅ Found ${jobsFromQuery.length} jobs on search results page`);
         
-        // Delay between searches to be respectful
-        await this.delay(2000);
+        // Random delay between searches to look more human
+        const delay = 3000 + Math.random() * 2000; // 3-5 seconds
+        console.log(`⏱️  Waiting ${Math.round(delay/1000)}s before next search...`);
+        await this.delay(delay);
       } catch (error) {
         console.error(`❌ Error with query "${query}":`, error.message);
+        // Take a screenshot for debugging
+        try {
+          await this.page.screenshot({ path: `error-${query.replace(/\s+/g, '-')}.png` });
+          console.log(`📸 Error screenshot saved`);
+        } catch (screenshotError) {
+          console.log('Could not take error screenshot');
+        }
       }
     }
 
@@ -135,369 +107,128 @@ class JobScraperService {
     return allJobs;
   }
 
-  // Scrape jobs from a single search query
-  async scrapeSearchQuery(query, maxJobs = 20) {
-    // Broader search without location restriction
+  // Scrape ONLY the search results page (NO navigation to individual jobs)
+  async scrapeSearchResultsPage(query) {
     const searchURL = `https://www.indeed.com/jobs?q=${encodeURIComponent(query)}&fromage=14&sort=date`;
     
-    console.log(`📄 Navigating to: ${searchURL}`);
+    console.log(`📄 Loading search page: ${searchURL}`);
     await this.page.goto(searchURL, { waitUntil: 'networkidle0' });
     
-    // Wait for search results to load with longer timeout and better fallbacks
-    try {
-      await this.page.waitForSelector('[data-jk], .jobsearch-SerpJobCard, .job_seen_beacon', { timeout: 15000 });
-    } catch (error) {
-      console.log(`⚠️  Primary selectors not found, trying alternative selectors...`);
-      try {
-        await this.page.waitForSelector('.slider_container, .jobsearch-NoResult', { timeout: 10000 });
-      } catch (fallbackError) {
-        throw new Error(`No job results found for query: ${query}`);
-      }
-    }
-    
+    // Wait for job cards to load
+    await this.page.waitForSelector('[data-jk], .jobsearch-SerpJobCard', { timeout: 15000 });
     await this.delay(2000);
 
-    // Extract job URLs from search results
-    const jobUrls = await this.extractJobUrlsFromSearch();
-    console.log(`🔗 Found ${jobUrls.length} job URLs`);
+    console.log(`📋 Extracting jobs directly from search results page...`);
 
-    // Limit the number of jobs to scrape
-    const urlsToScrape = jobUrls.slice(0, maxJobs);
-    const jobs = [];
-
-    for (let i = 0; i < urlsToScrape.length; i++) {
-      const url = urlsToScrape[i];
-      console.log(`📋 Scraping job ${i + 1}/${urlsToScrape.length}: ${url.substring(0, 60)}...`);
+    // Extract job data from THIS PAGE ONLY - no navigation
+    const jobs = await this.page.evaluate(() => {
+      const extractedJobs = [];
       
-      try {
-        const jobData = await this.scrapeIndividualJob(url);
-        if (jobData) {
-          jobs.push(jobData);
+      // Find all job cards on the current page
+      const jobCards = document.querySelectorAll('[data-jk]');
+      console.log(`Found ${jobCards.length} job cards`);
+      
+      jobCards.forEach((card, index) => {
+        try {
+          // Extract title
+          let title = null;
+          const titleSelectors = ['h2 a span[title]', 'h2 a span', '.jobTitle a span'];
+          for (const selector of titleSelectors) {
+            const titleEl = card.querySelector(selector);
+            if (titleEl && titleEl.textContent.trim()) {
+              title = titleEl.textContent.trim();
+              break;
+            }
+          }
+          
+          // Extract company
+          let company = null;
+          const companySelectors = ['.companyName a', '.companyName span', '.companyName'];
+          for (const selector of companySelectors) {
+            const companyEl = card.querySelector(selector);
+            if (companyEl && companyEl.textContent.trim()) {
+              company = companyEl.textContent.trim();
+              break;
+            }
+          }
+          
+          // Extract location
+          let location = null;
+          const locationSelectors = ['[data-testid="job-location"]', '.companyLocation'];
+          for (const selector of locationSelectors) {
+            const locationEl = card.querySelector(selector);
+            if (locationEl && locationEl.textContent.trim()) {
+              location = locationEl.textContent.trim();
+              break;
+            }
+          }
+          
+          // Extract salary
+          let salary = null;
+          const salarySelectors = ['.salary-snippet-container', '.salary-snippet'];
+          for (const selector of salarySelectors) {
+            const salaryEl = card.querySelector(selector);
+            if (salaryEl && salaryEl.textContent.includes('$')) {
+              salary = salaryEl.textContent.trim();
+              break;
+            }
+          }
+          
+          // Extract description/summary
+          let description = null;
+          const descSelectors = ['.summary', '.job-snippet'];
+          for (const selector of descSelectors) {
+            const descEl = card.querySelector(selector);
+            if (descEl && descEl.textContent.trim()) {
+              description = descEl.textContent.trim();
+              break;
+            }
+          }
+          
+          // Only save if we have title OR company
+          if (title || company) {
+            const jobData = {
+              title: title || 'Title not found',
+              company: company || 'Company not found',
+              location: location,
+              description: description,
+              url: window.location.href + `#job-${index}`, // Use search page URL
+              source: 'indeed',
+              extracted_data: {
+                page_type: 'indeed-search-results',
+                extracted_at: new Date().toISOString(),
+                extraction_method: 'search-results-only',
+                raw_salary: salary,
+                card_index: index
+              }
+            };
+            
+            extractedJobs.push(jobData);
+            console.log(`✅ Job ${index + 1}: ${title} at ${company}`);
+          }
+        } catch (error) {
+          console.error(`Error extracting job ${index}:`, error.message);
         }
-        
-        // Delay between individual job scrapes
-        await this.delay(1500);
-      } catch (error) {
-        console.error(`❌ Error scraping job ${url}:`, error.message);
-      }
-    }
+      });
+      
+      return extractedJobs;
+    });
 
+    console.log(`📊 Extracted ${jobs.length} jobs from search results`);
     return jobs;
   }
 
-  // Extract job URLs from search results page
-  async extractJobUrlsFromSearch() {
-    return await this.page.evaluate(() => {
-      const urls = [];
-      
-      // Try different selectors for job links with broader approach
-      const linkSelectors = [
-        '[data-jk] h2 a',
-        '[data-jk] a[href*="/viewjob"]',
-        '.jobTitle a',
-        'h2 a[href*="/viewjob"]',
-        'a[href*="/viewjob?jk="]',
-        '.slider_item a[href*="/viewjob"]'
-      ];
-      
-      for (const selector of linkSelectors) {
-        const links = document.querySelectorAll(selector);
-        links.forEach(link => {
-          if (link.href && link.href.includes('/viewjob')) {
-            urls.push(link.href);
-          }
-        });
-        
-        if (urls.length > 0) {
-          console.log(`Found ${urls.length} job URLs with selector: ${selector}`);
-          break; // Found links with this selector
-        }
-      }
-      
-      // If still no URLs, try a more aggressive approach
-      if (urls.length === 0) {
-        const allLinks = document.querySelectorAll('a[href*="/viewjob"]');
-        allLinks.forEach(link => {
-          if (link.href && link.href.includes('jk=')) {
-            urls.push(link.href);
-          }
-        });
-      }
-      
-      // Remove duplicates and clean URLs
-      const cleanUrls = [...new Set(urls)].map(url => {
-        try {
-          const urlObj = new URL(url);
-          // Keep only essential parameters
-          const essentialParams = ['jk', 'tk'];
-          for (const param of [...urlObj.searchParams.keys()]) {
-            if (!essentialParams.includes(param)) {
-              urlObj.searchParams.delete(param);
-            }
-          }
-          return urlObj.toString();
-        } catch (e) {
-          return url;
-        }
-      });
-      
-      return cleanUrls;
-    });
-  }
-
-  // Scrape individual job page (ported from your extension)
-  async scrapeIndividualJob(url) {
-    try {
-      await this.page.goto(url, { waitUntil: 'networkidle0' });
-      await this.delay(2000);
-
-      // Use your proven extraction logic
-      const jobData = await this.page.evaluate(() => {
-        // Helper function to find elements containing text
-        const findElementsContainingText = (searchText) => {
-          const allElements = document.querySelectorAll('*');
-          const matchingElements = [];
-          
-          [...allElements].forEach(el => {
-            if (el.textContent && el.textContent.includes(searchText) && el.children.length === 0) {
-              matchingElements.push(el);
-            }
-          });
-          
-          return matchingElements;
-        };
-
-        // Selectors (copied from constructor)
-        const selectors = {
-          title: [
-            '[data-testid="jobsearch-JobInfoHeader-title"] span',
-            '.jobsearch-JobInfoHeader-title span',
-            'h1 span[title]',
-            'h2[data-testid="jobsearch-JobInfoHeader-title"] span',
-            'h1', 'h2'
-          ],
-          company: [
-            '[data-testid*="companyName"] a',
-            '[data-testid*="companyName"]',
-            '[id*="company"] a',
-            '[id*="company"]',
-            '.companyName a',
-            '.companyName',
-            'a[href*="/cmp/"]'
-          ],
-          location: [
-            '[data-testid*="location"] span',
-            '[data-testid*="location"]',
-            '[id*="location"]',
-            '.location'
-          ],
-          description: [
-            '#jobDescriptionText',
-            '.jobsearch-JobComponent-description',
-            '[data-testid*="description"]'
-          ],
-          salary: [
-            '.jobsearch-JobMetadataHeader-item',
-            '.salary-snippet',
-            '[data-testid*="salary"]'
-          ]
-        };
-
-        // Extract title
-        const extractTitle = () => {
-          for (const selector of selectors.title) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.trim()) {
-              return element.textContent.trim();
-            }
-          }
-          
-          // Fallback: look for text that looks like a job title
-          const titleElements = findElementsContainingText('Engineer');
-          for (const el of titleElements) {
-            const text = el.textContent.trim();
-            if (text.length < 100 && text.includes('Engineer')) {
-              return text;
-            }
-          }
-          
-          return null;
-        };
-
-        // Extract company
-        const extractCompany = () => {
-          for (const selector of selectors.company) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.trim()) {
-              return element.textContent.trim();
-            }
-          }
-          
-          // Look for company links
-          const companyLinks = document.querySelectorAll('a[href*="/cmp/"]');
-          for (const link of companyLinks) {
-            if (link.textContent.trim() && link.textContent.trim().length < 100) {
-              return link.textContent.trim();
-            }
-          }
-          
-          return null;
-        };
-
-        // Extract location
-        const extractLocation = () => {
-          for (const selector of selectors.location) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.trim()) {
-              return element.textContent.trim();
-            }
-          }
-          
-          // Look for PA locations
-          const locationElements = findElementsContainingText('PA ');
-          for (const el of locationElements) {
-            const text = el.textContent.trim();
-            if (text.match(/\b[A-Z][a-z\s]+,\s*PA\s*\d{5}\b/)) {
-              return text;
-            }
-          }
-          
-          return null;
-        };
-
-        // Extract description
-        const extractDescription = () => {
-          for (const selector of selectors.description) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.trim()) {
-              return element.textContent.trim();
-            }
-          }
-          return null;
-        };
-
-        // Extract salary - FIXED VERSION
-        const extractSalary = () => {
-          for (const selector of selectors.salary) {
-            const element = document.querySelector(selector);
-            if (element && element.textContent.includes('$')) {
-              return element.textContent.trim();
-            }
-          }
-          return null;
-        };
-
-        // Clean text function
-        const cleanText = (text) => {
-          if (!text) return null;
-          return text.replace(/\s+/g, ' ').trim();
-        };
-
-        // Extract all data
-        const title = extractTitle();
-        const company = extractCompany();
-        const location = extractLocation();
-        const description = extractDescription();
-        const salary = extractSalary();
-
-        // Validate we have minimum required data
-        if (!title && !company) {
-          return null;
-        }
-
-        return {
-          title: cleanText(title),
-          company: cleanText(company),
-          location: cleanText(location),
-          description: description ? description.substring(0, 5000) : null,
-          url: window.location.href,
-          source: 'indeed',
-          extracted_data: {
-            page_type: 'indeed-job-detail',
-            extracted_at: new Date().toISOString(),
-            extraction_method: 'puppeteer-scraping',
-            raw_salary: cleanText(salary)
-          }
-        };
-      });
-
-      // Parse salary on the Node.js side since methods aren't available in browser context
-      if (jobData && jobData.extracted_data?.raw_salary) {
-        jobData.salary_min = this.parseSalaryMin(jobData.extracted_data.raw_salary);
-        jobData.salary_max = this.parseSalaryMax(jobData.extracted_data.raw_salary);
-      }
-
-      return jobData;
-    } catch (error) {
-      console.error(`Error scraping job at ${url}:`, error.message);
-      return null;
-    }
-  }
-
-  // Helper: Parse minimum salary from salary string
-  parseSalaryMin(salaryText) {
-    if (!salaryText) return null;
-    
-    // Look for salary patterns like "$50,000 - $70,000", "$25/hour", "$80K"
-    const patterns = [
-      /\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g, // $50,000 or $50000.00
-      /(\d+)k/gi // 50k or 50K
-    ];
-    
-    const numbers = [];
-    
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(salaryText)) !== null) {
-        let num = parseInt(match[1].replace(/,/g, ''));
-        if (pattern.source.includes('k')) {
-          num *= 1000; // Convert K to actual number
-        }
-        numbers.push(num);
-      }
-    }
-    
-    return numbers.length > 0 ? Math.min(...numbers) : null;
-  }
-
-  // Helper: Parse maximum salary from salary string
-  parseSalaryMax(salaryText) {
-    if (!salaryText) return null;
-    
-    const patterns = [
-      /\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g,
-      /(\d+)k/gi
-    ];
-    
-    const numbers = [];
-    
-    for (const pattern of patterns) {
-      let match;
-      while ((match = pattern.exec(salaryText)) !== null) {
-        let num = parseInt(match[1].replace(/,/g, ''));
-        if (pattern.source.includes('k')) {
-          num *= 1000;
-        }
-        numbers.push(num);
-      }
-    }
-    
-    return numbers.length > 0 ? Math.max(...numbers) : null;
-  }
-
-  // Save jobs to Supabase database
+  // Save jobs to database (same as before)
   async saveJobsToDatabase(jobs) {
     console.log(`\n💾 Saving ${jobs.length} jobs to database...`);
     
-    // Use a special UUID for seed jobs that don't belong to any user
     const SEED_USER_ID = '11111111-1111-1111-1111-111111111111';
-    
     const jobsToInsert = jobs
-      .filter(job => job && job.title) // Only valid jobs
+      .filter(job => job && job.title)
       .map(job => ({
         ...job,
-        user_id: SEED_USER_ID, // Special ID for seed/public jobs
-        posted_date: new Date().toISOString().split('T')[0], // Today's date
+        user_id: SEED_USER_ID,
+        posted_date: new Date().toISOString().split('T')[0],
         job_type: this.detectJobType(job.title),
         experience_level: this.detectExperienceLevel(job.title, job.description),
         is_remote: this.detectRemote(job.title, job.description, job.location),
@@ -507,10 +238,8 @@ class JobScraperService {
     let savedJobs = 0;
     const errors = [];
 
-    // Insert jobs one by one to handle duplicates gracefully
     for (const job of jobsToInsert) {
       try {
-        // Check if job already exists by URL
         const { data: existingJob } = await supabase
           .from('jobs')
           .select('id')
@@ -522,8 +251,7 @@ class JobScraperService {
           continue;
         }
 
-        // Insert new job
-        const { data, error } = await supabase
+        const { data, error } = await supabaseClient
           .from('jobs')
           .insert(job)
           .select();
@@ -545,66 +273,78 @@ class JobScraperService {
     console.log(`✅ Successfully saved: ${savedJobs} jobs`);
     console.log(`⚠️  Errors/Duplicates: ${errors.length}`);
     
-    if (errors.length > 0 && errors.length < 5) {
-      console.log('\nError details:');
-      errors.forEach(err => console.log(`  • ${err.job}: ${err.error}`));
-    }
-
     return savedJobs;
   }
 
-  // Helper: Detect job type from title
+  // Helper methods (same as before)
+  parseSalaryMin(salaryText) {
+    if (!salaryText) return null;
+    const patterns = [/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g, /(\d+)k/gi];
+    const numbers = [];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(salaryText)) !== null) {
+        let num = parseInt(match[1].replace(/,/g, ''));
+        if (pattern.source.includes('k')) num *= 1000;
+        numbers.push(num);
+      }
+    }
+    
+    return numbers.length > 0 ? Math.min(...numbers) : null;
+  }
+
+  parseSalaryMax(salaryText) {
+    if (!salaryText) return null;
+    const patterns = [/\$(\d+(?:,\d{3})*(?:\.\d{2})?)/g, /(\d+)k/gi];
+    const numbers = [];
+    
+    for (const pattern of patterns) {
+      let match;
+      while ((match = pattern.exec(salaryText)) !== null) {
+        let num = parseInt(match[1].replace(/,/g, ''));
+        if (pattern.source.includes('k')) num *= 1000;
+        numbers.push(num);
+      }
+    }
+    
+    return numbers.length > 0 ? Math.max(...numbers) : null;
+  }
+
   detectJobType(title) {
     if (!title) return 'full-time';
     const titleLower = title.toLowerCase();
-    
     if (titleLower.includes('intern')) return 'internship';
-    if (titleLower.includes('contract') || titleLower.includes('freelance')) return 'contract';
+    if (titleLower.includes('contract')) return 'contract';
     if (titleLower.includes('part-time')) return 'part-time';
-    
     return 'full-time';
   }
 
-  // Helper: Detect experience level
   detectExperienceLevel(title, description) {
     const text = `${title || ''} ${description || ''}`.toLowerCase();
-    
-    if (text.includes('intern') || text.includes('student')) return 'internship';
-    if (text.includes('entry level') || text.includes('junior') || text.includes('new grad')) return 'entry-level';
-    if (text.includes('senior') || text.includes('lead') || text.includes('principal')) return 'senior';
-    if (text.includes('mid-level') || text.includes('intermediate')) return 'mid-level';
-    
-    return 'entry-level'; // Default for our target audience
+    if (text.includes('intern')) return 'internship';
+    if (text.includes('entry level') || text.includes('junior')) return 'entry-level';
+    if (text.includes('senior')) return 'senior';
+    return 'entry-level';
   }
 
-  // Helper: Detect remote work
   detectRemote(title, description, location) {
     const text = `${title || ''} ${description || ''} ${location || ''}`.toLowerCase();
     return text.includes('remote') || text.includes('work from home');
   }
 
-  // Helper: Extract relevant tags
   extractTags(title, description) {
     const text = `${title || ''} ${description || ''}`.toLowerCase();
     const tags = [];
-    
-    // Tech stack detection
-    const techKeywords = [
-      'javascript', 'react', 'node.js', 'python', 'java', 'typescript',
-      'aws', 'docker', 'kubernetes', 'sql', 'postgresql', 'mongodb',
-      'agile', 'scrum', 'ci/cd', 'git', 'api', 'rest', 'graphql'
-    ];
+    const techKeywords = ['javascript', 'react', 'python', 'java', 'sql', 'aws'];
     
     techKeywords.forEach(keyword => {
-      if (text.includes(keyword)) {
-        tags.push(keyword);
-      }
+      if (text.includes(keyword)) tags.push(keyword);
     });
     
-    return tags.slice(0, 10); // Limit to 10 tags
+    return tags.slice(0, 10);
   }
 
-  // Clean up resources
   async cleanup() {
     if (this.browser) {
       await this.browser.close();
@@ -612,7 +352,6 @@ class JobScraperService {
     }
   }
 
-  // Helper: Delay function
   async delay(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }

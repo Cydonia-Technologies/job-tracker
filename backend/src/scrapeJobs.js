@@ -15,7 +15,7 @@ async function main() {
   const maxJobs = args[0] ? parseInt(args[0]) : 50;
   
   console.log(`Target: ${maxJobs} jobs from Indeed`);
-  console.log(`Focus: Entry-level tech jobs (nationwide search)\n`);
+  console.log(`Method: Direct extraction from search results (no navigation to individual pages)\n`);
 
   const scraper = new JobScraperService();
   let jobs = [];
