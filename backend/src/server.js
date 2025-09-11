@@ -112,7 +112,7 @@ app.use(cors({
     'http://localhost:3000',
     `chrome-extension://${process.env.EXTENSION_ID}`
   ],
-  credentials: true
+  credentials: true,
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With']
 }));
