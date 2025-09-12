@@ -15,7 +15,8 @@ async function main() {
   const maxJobs = args[0] ? parseInt(args[0]) : 50;
   
   console.log(`Target: ${maxJobs} jobs from Indeed`);
-  console.log(`Method: Direct extraction from search results (no navigation to individual pages)\n`);
+  console.log(`Method: Human-like browsing with CAPTCHA handling\n`);
+  console.log(`⚠️  Note: Browser will stay visible for manual CAPTCHA solving if needed\n`);
 
   const scraper = new JobScraperService();
   let jobs = [];
