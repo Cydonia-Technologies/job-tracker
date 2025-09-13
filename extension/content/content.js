@@ -1,8 +1,7 @@
 // =====================================================
-// CONTENT SCRIPT - Main Controller
+// UPDATED CONTENT SCRIPT - Global Database Support
 // =====================================================
 
-// content/content.js
 class JobTrackerContent {
   constructor() {
     this.currentSite = this.detectSite();
@@ -52,23 +51,16 @@ class JobTrackerContent {
   }
 
   async setup() {
-    // Check if user is authenticated
-    //    const authStatus = await this.sendMessage({ action: 'CHECK_AUTH' });
-    //    
-    //    if (!authStatus.success || !authStatus.data.authenticated) {
-    //      this.showLoginPrompt();
-    //      return;
-    //    }
-
-
-    // TEMPORARILY SKIP AUTH - just proceed directly
-    console.log('Skipping auth check for testing');
+    console.log('🚀 JobTracker: Setting up global job extraction...');
 
     // Try to extract job data
     const jobData = await this.extractJobData();
     
     if (jobData) {
+      console.log('✅ Job data extracted:', jobData);
       this.showSaveOverlay(jobData);
+    } else {
+      console.log('❌ No job data found on this page');
     }
 
     // Listen for URL changes (for SPAs like LinkedIn)
@@ -77,11 +69,23 @@ class JobTrackerContent {
 
   async extractJobData() {
     if (!this.extractor) {
+      console.log('No extractor available for this site');
       return null;
     }
 
     try {
-      return await this.extractor.extract();
+      const data = await this.extractor.extract();
+      if (data) {
+        // Add global database metadata
+        data.extracted_data = {
+          ...data.extracted_data,
+          extraction_method: 'chrome_extension',
+          site_detected: this.currentSite,
+          page_title: document.title,
+          extraction_timestamp: new Date().toISOString()
+        };
+      }
+      return data;
     } catch (error) {
       console.error('Job extraction error:', error);
       return null;
@@ -93,50 +97,33 @@ class JobTrackerContent {
       this.overlay.remove();
     }
 
-    this.overlay = new JobSaveOverlay(jobData, this.saveJob.bind(this));
+    this.overlay = new JobSaveOverlay(jobData, this.saveJobToGlobal.bind(this));
     this.overlay.show();
   }
 
-  showLoginPrompt() {
-    // Create a simple login prompt overlay
-    const loginOverlay = document.createElement('div');
-    loginOverlay.className = 'job-tracker-login-prompt';
-    loginOverlay.innerHTML = `
-      <div class="login-content">
-        <h3>Job Tracker</h3>
-        <p>Please log in to save jobs</p>
-        <button id="login-btn">Open Login</button>
-        <button id="dismiss-btn">Dismiss</button>
-      </div>
-    `;
-    
-    document.body.appendChild(loginOverlay);
-    
-    // Add event listeners
-    loginOverlay.querySelector('#login-btn').addEventListener('click', () => {
-      chrome.tabs.create({ url: 'http://localhost:3000/login' });
-      loginOverlay.remove();
-    });
-    
-    loginOverlay.querySelector('#dismiss-btn').addEventListener('click', () => {
-      loginOverlay.remove();
-    });
-  }
-
-  async saveJob(jobData) {
+  async saveJobToGlobal(jobData) {
     try {
+      console.log('📤 Saving job to global database...');
+      
       const result = await this.sendMessage({ 
         action: 'SAVE_JOB', 
         jobData: jobData 
       });
       
       if (result.success) {
-        this.showSuccessMessage('Job saved successfully!');
+        const message = result.data.created 
+          ? 'Job saved to global database!' 
+          : 'Job already exists in database!';
+          
+        this.showSuccessMessage(message);
         this.updateBadge();
+        
+        console.log('✅ Save result:', result.data);
       } else {
         this.showErrorMessage(result.error || 'Failed to save job');
       }
     } catch (error) {
+      console.error('❌ Error saving job:', error);
       this.showErrorMessage('Error saving job: ' + error.message);
     }
   }
@@ -164,17 +151,27 @@ class JobTrackerContent {
   showToast(message, type) {
     const toast = document.createElement('div');
     toast.className = `job-tracker-toast job-tracker-toast-${type}`;
-    toast.textContent = message;
+    toast.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          ${type === 'success' 
+            ? '<path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41L9 16.17z"/>'
+            : '<path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>'
+          }
+        </svg>
+        <span>${message}</span>
+      </div>
+    `;
     
     document.body.appendChild(toast);
     
     setTimeout(() => {
       toast.remove();
-    }, 3000);
+    }, 4000);
   }
 
   async updateBadge() {
-    // Get current job count and update badge
+    // Update badge with global job count
     await this.sendMessage({ action: 'UPDATE_BADGE', count: 1 });
   }
 
@@ -185,7 +182,8 @@ class JobTrackerContent {
     const observer = new MutationObserver(() => {
       if (window.location.href !== currentURL) {
         currentURL = window.location.href;
-        setTimeout(() => this.setup(), 1000); // Re-initialize after URL change
+        console.log('🔄 URL changed, re-initializing...');
+        setTimeout(() => this.setup(), 2000); // Re-initialize after URL change with longer delay
       }
     });
     
@@ -197,5 +195,5 @@ class JobTrackerContent {
 }
 
 // Initialize when script loads
+console.log('🎯 JobTracker Content Script Loaded');
 new JobTrackerContent();
-

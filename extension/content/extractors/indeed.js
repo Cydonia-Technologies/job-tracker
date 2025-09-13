@@ -1,5 +1,5 @@
 // =====================================================
-// INDEED JOB EXTRACTOR - Complete Clean Version
+// INDEED JOB EXTRACTOR - With Apply URL Extraction
 // =====================================================
 
 class IndeedExtractor {
@@ -120,8 +120,9 @@ class IndeedExtractor {
     const company = this.extractCompany();  
     const location = this.extractLocation();
     const description = this.extractDescription();
+    const applicationURL = this.extractApplicationURL(); // Extract apply URL
     
-    console.log('Extraction results:', { title, company, location });
+    console.log('Extraction results:', { title, company, location, applicationURL });
     
     if (!title && !company) {
       console.log('No basic job data found');
@@ -133,16 +134,82 @@ class IndeedExtractor {
       company: company,
       location: location,
       description: description,
-      url: this.cleanURL(window.location.href),
+      url: applicationURL, // Use the extracted apply URL
       source: this.source,
       extracted_data: {
         page_type: 'modern-indeed',
+        page_url: window.location.href, // Keep original page URL for reference
         extracted_at: new Date().toISOString(),
-        extraction_method: 'intelligent-search'
+        extraction_method: 'intelligent-search',
+        url_type: this.isValidApplyURL(applicationURL) ? 'apply_url' : 'page_url',
+        has_apply_link: this.isValidApplyURL(applicationURL)
       }
     };
     
     return this.validateAndCleanJobData(jobData);
+  }
+
+  extractApplicationURL() {
+    console.log('🔗 Extracting application URL...');
+    
+    // First try to find buttons with href attributes containing applystart
+    const applyButtonSelectors = [
+      'button[href*="applystart"]',
+      'a[href*="applystart"]',
+      'button[contenthtml*="Apply"]',
+      'button[aria-label*="Apply"]'
+    ];
+
+    for (const selector of applyButtonSelectors) {
+      try {
+        const element = document.querySelector(selector);
+        if (element && element.getAttribute('href')) {
+          const href = element.getAttribute('href');
+          if (href.includes('applystart') || href.includes('apply')) {
+            console.log('✅ Found apply URL via selector:', selector, href);
+            return this.cleanURL(href);
+          }
+        }
+      } catch (e) {
+        // Skip invalid selectors
+      }
+    }
+    
+    // Fallback: Look through all buttons and links for Apply-related content
+    const allClickableElements = document.querySelectorAll('button, a, [role="button"]');
+    console.log(`🔍 Checking ${allClickableElements.length} clickable elements for Apply buttons...`);
+    
+    for (const element of allClickableElements) {
+      const text = element.textContent?.toLowerCase() || '';
+      const ariaLabel = element.getAttribute('aria-label')?.toLowerCase() || '';
+      const href = element.getAttribute('href') || '';
+      const contenthtml = element.getAttribute('contenthtml')?.toLowerCase() || '';
+      
+      // Check if this element is an Apply button
+      const isApplyButton = 
+        text.includes('apply') || 
+        ariaLabel.includes('apply') ||
+        contenthtml.includes('apply');
+        
+      if (isApplyButton && href) {
+        console.log('✅ Found apply URL via text search:', href);
+        console.log('   Element text:', text.substring(0, 50));
+        console.log('   Aria label:', ariaLabel);
+        console.log('   Contenthtml:', contenthtml);
+        return this.cleanURL(href);
+      }
+    }
+    
+    // Last resort: look for any URL with applystart in page HTML
+    const pageHTML = document.body.innerHTML;
+    const applyUrlMatch = pageHTML.match(/href="([^"]*applystart[^"]*)"/i);
+    if (applyUrlMatch) {
+      console.log('✅ Found apply URL via HTML search:', applyUrlMatch[1]);
+      return this.cleanURL(applyUrlMatch[1]);
+    }
+    
+    console.log('❌ No apply URL found, using page URL as fallback');
+    return window.location.href;
   }
 
   extractTitle() {
@@ -250,8 +317,17 @@ class IndeedExtractor {
   }
 
   cleanURL(url) {
+    if (!url) return window.location.href;
+    
     try {
+      // If it's an apply URL, keep it as-is (but decode HTML entities)
+      if (url.includes('applystart')) {
+        return url.replace(/&amp;/g, '&');
+      }
+      
+      // For regular Indeed URLs, clean them up
       const urlObj = new URL(url);
+      
       // Keep only essential parameters
       const essentialParams = ['vjk', 'jk'];
       
@@ -265,6 +341,21 @@ class IndeedExtractor {
     } catch (e) {
       return url;
     }
+  }
+
+  // Check if we found a real apply URL
+  isValidApplyURL(url) {
+    if (!url) return false;
+    
+    const validPatterns = [
+      'applystart',
+      'apply/job',
+      'jobs/apply',
+      'application',
+      'career'
+    ];
+    
+    return validPatterns.some(pattern => url.toLowerCase().includes(pattern));
   }
 
   validateAndCleanJobData(jobData) {
@@ -284,6 +375,7 @@ class IndeedExtractor {
       jobData.description = jobData.description.substring(0, 5000) + '...';
     }
     
+    console.log(`🔍 Job data validated - URL type: ${jobData.extracted_data.url_type}`);
     return jobData;
   }
 
@@ -314,7 +406,54 @@ class IndeedExtractor {
       });
     });
     
+    console.log('=== TESTING APPLY URL EXTRACTION ===');
+    const applyURL = this.extractApplicationURL();
+    console.log('Apply URL found:', applyURL);
+    console.log('Is valid apply URL:', this.isValidApplyURL(applyURL));
+    
     console.log('=== END SELECTOR TEST ===');
+  }
+
+  // Test apply button detection specifically
+  testApplyButtonDetection() {
+    console.log('🔍 TESTING APPLY BUTTON DETECTION');
+    
+    // Find all potential apply buttons
+    const allButtons = document.querySelectorAll('button, a, [role="button"]');
+    console.log(`Found ${allButtons.length} clickable elements`);
+    
+    const applyButtons = [];
+    
+    allButtons.forEach((element, index) => {
+      const text = element.textContent?.toLowerCase() || '';
+      const ariaLabel = element.getAttribute('aria-label')?.toLowerCase() || '';
+      const href = element.getAttribute('href') || '';
+      const contenthtml = element.getAttribute('contenthtml')?.toLowerCase() || '';
+      
+      const isApplyButton = 
+        text.includes('apply') || 
+        ariaLabel.includes('apply') ||
+        contenthtml.includes('apply');
+        
+      if (isApplyButton) {
+        applyButtons.push({
+          index,
+          text: text.substring(0, 50),
+          ariaLabel,
+          href: href.substring(0, 100),
+          contenthtml,
+          hasHref: !!href,
+          isApplyURL: href.includes('applystart')
+        });
+      }
+    });
+    
+    console.log(`Found ${applyButtons.length} potential apply buttons:`);
+    applyButtons.forEach((btn, i) => {
+      console.log(`  ${i + 1}:`, btn);
+    });
+    
+    return applyButtons;
   }
 }
 
@@ -324,8 +463,17 @@ window.IndeedExtractor = IndeedExtractor;
 // Auto-test when loaded (for debugging)
 if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('indeed.com')) {
   setTimeout(() => {
-    console.log('Auto-testing Indeed extractor...');
+    console.log('🧪 Auto-testing Indeed extractor...');
     const extractor = new IndeedExtractor();
     extractor.testSelectors();
-  }, 2000);
+    extractor.testApplyButtonDetection();
+    
+    // Test actual extraction
+    setTimeout(() => {
+      console.log('🎯 Testing full extraction...');
+      extractor.extract().then(result => {
+        console.log('📊 Extraction result:', result);
+      });
+    }, 1000);
+  }, 3000);
 }

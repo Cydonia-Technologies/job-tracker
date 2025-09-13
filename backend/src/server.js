@@ -86,12 +86,10 @@ const aiRoutes = require('./routes/ai');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
 // =====================================================
 // MIDDLEWARE SETUP
 // =====================================================
-
-// Use global routes
-app.use('/api/global', globalRoutes);
 
 // Security middleware
 app.use(helmet({
@@ -111,7 +109,7 @@ app.use(cors({
   origin: [
     process.env.FRONTEND_URL,
     'https://job-tracker-weld-three.vercel.app',
-    'https://job-tracker-a328d75pp-efekaralars-projects.vercel.app', // Add this
+    'https://job-tracker-a328d75pp-efekaralars-projects.vercel.app',
     'http://localhost:3000',
     `chrome-extension://${process.env.EXTENSION_ID}`
   ],
@@ -125,7 +123,7 @@ if (process.env.NODE_ENV !== 'test') {
   app.use(morgan('combined'));
 }
 
-// Body parsing
+// Body parsing (MUST come before routes)
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
@@ -142,9 +140,10 @@ app.get('/health', (req, res) => {
 });
 
 // =====================================================
-// API ROUTES
+// API ROUTES (AFTER body parsing middleware)
 // =====================================================
 
+app.use('/api/global', globalRoutes);    // <-- NOW in the right place
 app.use('/api/auth', authRoutes);
 app.use('/api/jobs', jobRoutes);
 app.use('/api/applications', applicationRoutes);
@@ -168,4 +167,3 @@ if (process.env.NODE_ENV !== 'test') {
 }
 
 module.exports = app;
-

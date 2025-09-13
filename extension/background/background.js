@@ -1,10 +1,10 @@
 // =====================================================
-//  BACKGROUND SCRIPT - API Communication
+//  UPDATED BACKGROUND SCRIPT - Global Database Support
 // =====================================================
 
 class BackgroundService {
   constructor() {
-    this.API_BASE_URL = 'http://localhost:3001/api';
+    this.API_BASE_URL = 'https://jobtracker-api-b08390fc29d1.herokuapp.com/api'; // Use production URL
     this.initializeListeners();
   }
 
@@ -23,7 +23,7 @@ class BackgroundService {
     try {
       switch (request.action) {
         case 'SAVE_JOB':
-          const result = await this.saveJob(request.jobData);
+          const result = await this.saveJobToGlobalDatabase(request.jobData);
           sendResponse({ success: true, data: result });
           break;
           
@@ -42,6 +42,11 @@ class BackgroundService {
           sendResponse({ success: true });
           break;
           
+        case 'GET_GLOBAL_JOBS':
+          const jobs = await this.getGlobalJobs(request.filters);
+          sendResponse({ success: true, data: jobs });
+          break;
+          
         default:
           sendResponse({ success: false, error: 'Unknown action' });
       }
@@ -51,59 +56,60 @@ class BackgroundService {
     }
   }
 
-  // Temporary solution that bypasses auth for testing purposes
-  // TODO: remove later
-  async saveJob(jobData) {
-    const token = await this.getAuthToken();
+  // NEW METHOD: Save job to global database (no auth required)
+  async saveJobToGlobalDatabase(jobData) {
+    console.log('Saving job to global database:', jobData);
     
-    // FOR TESTING: Use a dummy token or skip auth
-    const headers = {
-      'Content-Type': 'application/json'
+    // Add extension metadata
+    const enhancedJobData = {
+      ...jobData,
+      extracted_data: {
+        ...jobData.extracted_data,
+        extension_version: chrome.runtime.getManifest().version,
+        extraction_timestamp: new Date().toISOString(),
+        page_url: jobData.url,
+        user_agent: navigator.userAgent
+      }
     };
-    
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-  
-    const response = await fetch(`${this.API_BASE_URL}/jobs`, {
+
+    const response = await fetch(`${this.API_BASE_URL}/global/jobs`, {
       method: 'POST',
-      headers: headers,
-      body: JSON.stringify(jobData)
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify(enhancedJobData)
     });
-  
+
     if (!response.ok) {
       const error = await response.json();
-      // For testing, log the exact error
-      console.error('Save job error:', error);
-      throw new Error(error.error || 'Failed to save job');
+      console.error('Global save job error:', error);
+      throw new Error(error.error || 'Failed to save job to global database');
     }
-  
+
+    const result = await response.json();
+    console.log('Job saved to global database:', result);
+    return result;
+  }
+
+  // NEW METHOD: Get jobs from global database
+  async getGlobalJobs(filters = {}) {
+    const params = new URLSearchParams(filters);
+    
+    const response = await fetch(`${this.API_BASE_URL}/global/jobs?${params}`, {
+      method: 'GET',
+      headers: {
+        'Content-Type': 'application/json'
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch global jobs');
+    }
+
     return await response.json();
   }
-  // async saveJob(jobData) {
-  //   const token = await this.getAuthToken();
-  //   
-  //   if (!token) {
-  //     throw new Error('Not authenticated. Please log in to the web app first.');
-  //   }
 
-  //   const response = await fetch(`${this.API_BASE_URL}/jobs`, {
-  //     method: 'POST',
-  //     headers: {
-  //       'Content-Type': 'application/json',
-  //       'Authorization': `Bearer ${token}`
-  //     },
-  //     body: JSON.stringify(jobData)
-  //   });
-
-  //   if (!response.ok) {
-  //     const error = await response.json();
-  //     throw new Error(error.error || 'Failed to save job');
-  //   }
-
-  //   return await response.json();
-  // }
-
+  // Keep existing methods for user-specific functionality
   async getUserProfile() {
     const token = await this.getAuthToken();
     
@@ -161,7 +167,7 @@ class BackgroundService {
   handleInstall(details) {
     if (details.reason === 'install') {
       chrome.tabs.create({
-        url: 'http://localhost:3000/health'
+        url: 'https://job-tracker-weld-three.vercel.app' // Use production URL
       });
     }
   }
@@ -169,4 +175,3 @@ class BackgroundService {
 
 // Initialize background service
 new BackgroundService();
-
