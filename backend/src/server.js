@@ -77,6 +77,7 @@ const { errorHandler } = require('./middleware/errorHandler');
 const { rateLimiter } = require('./middleware/rateLimiter');
 
 // Import routes
+const globalRoutes = require('./routes/global');
 const authRoutes = require('./routes/auth');
 const jobRoutes = require('./routes/jobs');
 const applicationRoutes = require('./routes/applications');
@@ -85,10 +86,12 @@ const aiRoutes = require('./routes/ai');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
-
 // =====================================================
 // MIDDLEWARE SETUP
 // =====================================================
+
+// Use global routes
+app.use('/api/global', globalRoutes);
 
 // Security middleware
 app.use(helmet({
