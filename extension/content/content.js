@@ -120,11 +120,23 @@ class JobTrackerContent {
         
         console.log('✅ Save result:', result.data);
       } else {
+        console.error('❌ Save failed:', result.error);
         this.showErrorMessage(result.error || 'Failed to save job');
       }
     } catch (error) {
-      console.error('❌ Error saving job:', error);
-      this.showErrorMessage('Error saving job: ' + error.message);
+      console.error('💥 Save job error:', error);
+      
+      // Try to give more helpful error messages
+      let errorMessage = 'Error saving job';
+      if (error.message.includes('Failed to fetch')) {
+        errorMessage = 'Network error - check internet connection';
+      } else if (error.message.includes('CORS')) {
+        errorMessage = 'Connection blocked - CORS error';
+      } else if (error.message) {
+        errorMessage = error.message;
+      }
+      
+      this.showErrorMessage(errorMessage);
     }
   }
 

@@ -58,7 +58,7 @@ class BackgroundService {
 
   // NEW METHOD: Save job to global database (no auth required)
   async saveJobToGlobalDatabase(jobData) {
-    console.log('Saving job to global database:', jobData);
+    console.log('🌍 Saving job to global database:', jobData);
     
     // Add extension metadata
     const enhancedJobData = {
@@ -67,28 +67,57 @@ class BackgroundService {
         ...jobData.extracted_data,
         extension_version: chrome.runtime.getManifest().version,
         extraction_timestamp: new Date().toISOString(),
-        page_url: jobData.url,
+        page_url: jobData.extracted_data?.page_url || jobData.url,
         user_agent: navigator.userAgent
       }
     };
 
-    const response = await fetch(`${this.API_BASE_URL}/global/jobs`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(enhancedJobData)
-    });
+    console.log('📤 Making API request to:', `${this.API_BASE_URL}/global/jobs`);
+    console.log('📝 Request payload:', enhancedJobData);
 
-    if (!response.ok) {
-      const error = await response.json();
-      console.error('Global save job error:', error);
-      throw new Error(error.error || 'Failed to save job to global database');
+    try {
+      const response = await fetch(`${this.API_BASE_URL}/global/jobs`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(enhancedJobData)
+      });
+
+      console.log('📡 API Response status:', response.status);
+      console.log('📡 API Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ API Response not OK. Status:', response.status);
+        console.error('❌ Response text:', errorText);
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch (e) {
+          errorData = { error: errorText };
+        }
+        
+        throw new Error(errorData.error || `API Error: ${response.status} ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('✅ Job saved successfully:', result);
+      return result;
+    } catch (error) {
+      console.error('💥 Fetch error details:');
+      console.error('   Error type:', error.constructor.name);
+      console.error('   Error message:', error.message);
+      console.error('   Error stack:', error.stack);
+      
+      // Check if it's a network error
+      if (error.message.includes('fetch')) {
+        console.error('   This looks like a network/CORS error');
+      }
+      
+      throw error;
     }
-
-    const result = await response.json();
-    console.log('Job saved to global database:', result);
-    return result;
   }
 
   // NEW METHOD: Get jobs from global database
