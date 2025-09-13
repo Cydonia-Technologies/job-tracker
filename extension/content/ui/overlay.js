@@ -22,6 +22,11 @@ class JobSaveOverlay {
   hide() {
     if (!this.isVisible) return;
     
+    // Call onClose callback if provided
+    if (this.onClose) {
+      this.onClose();
+    }
+    
     this.animateOut(() => {
       if (this.overlay) {
         this.overlay.remove();

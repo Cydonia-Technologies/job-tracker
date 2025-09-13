@@ -7,6 +7,7 @@ class JobTrackerContent {
     this.currentSite = this.detectSite();
     this.extractor = this.getExtractor();
     this.overlay = null;
+    this.lastJobData = null; // Track last extracted job to detect changes
     
     if (this.extractor) {
       this.initialize();
